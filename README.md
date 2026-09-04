@@ -2,6 +2,8 @@
 
 一款**时间错位**网格解谜游戏。没有战斗，没有道具，没有随机——只有一条规则。
 
+**▶ [在线试玩 · Play now](https://echo-shift-chi.vercel.app)**
+
 ![screenshot](docs/screenshot.png)
 
 ## 唯一的规则
