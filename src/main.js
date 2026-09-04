@@ -47,7 +47,7 @@ function loadIndex(i) {
   el.hint.textContent = def.hint;
   el.par.textContent = String(def.par);
   el.delays.innerHTML = board.delays
-    .map((d) => `<span class="chip">回声 −${d}</span>`)
+    .map((d) => `<span class="chip">ECHO -${d}</span>`)
     .join('');
   hideOverlay();
   renderDots();
@@ -83,16 +83,23 @@ function doMove(dir) {
   updateHud();
 
   if (state.status === 'paradox') {
-    showOverlay('时间悖论', '回声走进了你所在的格子。它重演的是你自己的路线——所以这一步，其实是你几回合前就决定好的。', '撤销一步', undo);
+    showOverlay(
+      'PARADOX',
+      'An echo stepped into your tile. It only ever replays your own route, so that collision is something you set up several turns ago.',
+      'UNDO',
+      undo,
+    );
   } else if (state.status === 'won') {
     const def = LEVELS[index];
     const perfect = state.turn === def.par;
     if (index + 1 >= unlocked) { unlocked = Math.min(LEVELS.length, index + 2); save(); renderDots(); }
     const last = index === LEVELS.length - 1;
     showOverlay(
-      perfect ? '最优解' : '过关',
-      `用了 ${state.turn} 步${perfect ? '，正是最优步数。' : `，最优是 ${def.par} 步。`}`,
-      last ? '重玩第一关' : '下一关',
+      perfect ? 'PERFECT' : 'CLEAR',
+      perfect
+        ? `Solved in ${state.turn} moves — that is the optimum.`
+        : `Solved in ${state.turn} moves. Par is ${def.par}.`,
+      last ? 'REPLAY FROM 1' : 'NEXT LEVEL',
       () => loadIndex(last ? 0 : index + 1),
     );
   }

@@ -15,9 +15,9 @@ export const LEVELS = [
   {
     id: 1,
     par: 14,
-    title: '回声 / Echo',
+    title: 'ECHO',
     delays: [3],
-    hint: '走两步，看看身后。那个半透明的家伙，是三回合前的你。',
+    hint: 'Take a few steps, then look behind you. That flickering thing is you, three turns ago.',
     grid: [
       '#########',
       '#@......#',
@@ -29,9 +29,9 @@ export const LEVELS = [
   {
     id: 2,
     par: 9,
-    title: '按住过去 / Hold the Past',
+    title: 'HOLD THE PAST',
     delays: [3],
-    hint: '闸门只在压力板被踩住时开启。你没法同时站在两个地方——但三回合前的你可以。',
+    hint: 'A gate is open only while every plate is held down. You cannot be in two places at once — but three turns ago, you can.',
     grid: [
       '#########',
       '#@..#X..#',
@@ -43,9 +43,9 @@ export const LEVELS = [
   {
     id: 3,
     par: 8,
-    title: '站得久一点 / Linger',
+    title: 'LINGER',
     delays: [3],
-    hint: '你在板上站了几回合，门就为你开几回合。板离门太近，就得站得更久。',
+    hint: 'The gate stays open for exactly as long as you stood on the plate. A plate this close to the gate means standing there longer.',
     grid: [
       '#########',
       '#@.p#...#',
@@ -57,9 +57,9 @@ export const LEVELS = [
   {
     id: 4,
     par: 17,
-    title: '回头路 / Backtrack',
+    title: 'BACKTRACK',
     delays: [5],
-    hint: '回声会原样重走你的来路。在一格宽的死路里，你和它必然迎面相撞——除非你闪进旁边的凹口，等它过去。',
+    hint: 'Your echo retraces the way you came. In a one-tile dead end you will always meet it head-on — unless you duck into the alcove and let it pass.',
     grid: [
       '##########',
       '#@..g...X#',
@@ -72,9 +72,9 @@ export const LEVELS = [
   {
     id: 5,
     par: 13,
-    title: '恰好五步 / Exactly Five',
+    title: 'EXACTLY FIVE',
     delays: [5],
-    hint: '板到门刚好五步，延迟也刚好五回合。一步都不能浪费。',
+    hint: 'Plate to gate is five steps. The delay is five turns. Nothing to spare.',
     grid: [
       '##########',
       '#@...#X..#',
@@ -88,9 +88,9 @@ export const LEVELS = [
   {
     id: 6,
     par: 13,
-    title: '两个自己 / Two of You',
+    title: 'TWO OF YOU',
     delays: [3, 6],
-    hint: '两块板，两个回声。三回合前的你踩一块，六回合前的你踩另一块，现在的你走过去。',
+    hint: 'Two plates, two echoes. Three-turns-ago holds one, six-turns-ago holds the other, and you walk through the gap.',
     grid: [
       '###########',
       '#@..p#....#',
@@ -103,9 +103,9 @@ export const LEVELS = [
   {
     id: 7,
     par: 15,
-    title: '拥挤 / Crowded',
+    title: 'CROWDED',
     delays: [3, 6],
-    hint: '空间变窄了。既要踩准两块板，又不能让回声撞上你。',
+    hint: 'Less room now. Hit both plates on time, and keep out of your own way.',
     grid: [
       '############',
       '#@...p#....#',
@@ -118,9 +118,9 @@ export const LEVELS = [
   {
     id: 8,
     par: 12,
-    title: '三重奏 / Trio',
+    title: 'TRIO',
     delays: [2, 4, 6],
-    hint: '三块板，三个回声，间隔两回合。整条路线是一台钟表——差一步都不行。',
+    hint: 'Three plates, three echoes, two turns apart. The whole route is one clock — a single wasted step breaks it.',
     grid: [
       '##########',
       '#@..#....#',

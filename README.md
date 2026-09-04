@@ -39,14 +39,14 @@
 
 | # | 关卡 | 回声延迟 | 最优步数 | 教什么 |
 | --- | --- | --- | --- | --- |
-| 1 | 回声 / Echo | −3 | 14 | 认识那个跟着你的东西 |
-| 2 | 按住过去 / Hold the Past | −3 | 9 | 让过去的自己去踩板 |
-| 3 | 站得久一点 / Linger | −3 | 8 | 停留时长 = 开门时长 |
-| 4 | 回头路 / Backtrack | −5 | 17 | 一格宽的死路里，你必然撞上自己 |
-| 5 | 恰好五步 / Exactly Five | −5 | 13 | 距离必须正好等于延迟 |
-| 6 | 两个自己 / Two of You | −3 / −6 | 13 | 两块板，两个回声 |
-| 7 | 拥挤 / Crowded | −3 / −6 | 15 | 既要踩准，又不能相撞 |
-| 8 | 三重奏 / Trio | −2 / −4 / −6 | 12 | 三块板同时被踩住的那一瞬间 |
+| 1 | ECHO | −3 | 14 | 认识那个跟着你的东西 |
+| 2 | HOLD THE PAST | −3 | 9 | 让过去的自己去踩板 |
+| 3 | LINGER | −3 | 8 | 停留时长 = 开门时长 |
+| 4 | BACKTRACK | −5 | 17 | 一格宽的死路里，你必然撞上自己 |
+| 5 | EXACTLY FIVE | −5 | 13 | 距离必须正好等于延迟 |
+| 6 | TWO OF YOU | −3 / −6 | 13 | 两块板，两个回声 |
+| 7 | CROWDED | −3 / −6 | 15 | 既要踩准，又不能相撞 |
+| 8 | TRIO | −2 / −4 / −6 | 12 | 三块板同时被踩住的那一瞬间 |
 
 ## 关卡是被证明过的，不是试出来的
 
@@ -62,14 +62,14 @@
 ```
   #  level                    delay  optimal  echo-required   states   time
   --------------------------------------------------------------------------
-  1  回声 / Echo                3      14       tutorial        117      2ms
-  2  按住过去 / Hold the Past     3      9        yes             424      6ms
-  3  站得久一点 / Linger           3      8        yes             434      2ms
-  4  回头路 / Backtrack          5      17       yes             1002     3ms
-  5  恰好五步 / Exactly Five      5      13       yes             25072    134ms
-  6  两个自己 / Two of You        3/6    13       yes             37310    199ms
-  7  拥挤 / Crowded             3/6    15       yes             56317    264ms
-  8  三重奏 / Trio               2/4/6  12       yes             8243     34ms
+  1  ECHO                     3      14       tutorial        117      2ms
+  2  HOLD THE PAST            3      9        yes             424      5ms
+  3  LINGER                   3      8        yes             434      2ms
+  4  BACKTRACK                5      17       yes             1002     3ms
+  5  EXACTLY FIVE             5      13       yes             25072    141ms
+  6  TWO OF YOU               3/6    13       yes             37310    249ms
+  7  CROWDED                  3/6    15       yes             56317    467ms
+  8  TRIO                     2/4/6  12       yes             8243     57ms
 ```
 
 ## 本地运行
@@ -89,10 +89,10 @@ npm run solve -- 8 # 打印第 8 关的最优解
 ```js
 {
   id: 9,
-  title: '你的关卡',
+  title: 'YOUR LEVEL',
   delays: [4],        // 一个回声，落后 4 回合；写 [3, 6] 就是两个
   par: 0,             // 先随便填，测试会告诉你真实的最优步数
-  hint: '给玩家的一句话',
+  hint: 'One line of guidance for the player.',
   grid: [
     '#########',
     '#@..#X..#',
@@ -122,6 +122,13 @@ npm run solve -- 8 # 打印第 8 关的最优解
 
 原生 JavaScript + Canvas，ES Modules，零运行时依赖，零构建步骤。
 `src/engine.js` 是纯函数、不碰 DOM——浏览器和求解器跑的是同一份代码。
+
+画面是真像素风：每个格子按 8×8 精灵网格绘制，格子尺寸强制为 8 的倍数，
+所有坐标取整并关闭抗锯齿，连数字都是代码里自绘的 3×5 位图字。
+回声用青/品红**互补相位的棋盘抖动**叠出来——同一个身体，被拆成两个错开的色彩通道。
+
+界面文字为英文。标题字体用 Google Fonts 的 Silkscreen，加载失败会回退到系统等宽字体，
+不影响任何功能。
 
 ## License
 

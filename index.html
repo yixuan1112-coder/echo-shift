@@ -1,20 +1,23 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ECHO SHIFT · 错位回声</title>
-<meta name="description" content="一款时间错位解谜游戏：你走的每一步，都会在若干回合后由一个「回声」原样重演。">
-<meta name="theme-color" content="#0d0f14">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230d0f14'/><rect x='6' y='9' width='11' height='11' rx='3' fill='%234dd6ff' opacity='.55'/><rect x='14' y='12' width='12' height='12' rx='3' fill='%23f5c542'/></svg>">
+<title>ECHO SHIFT</title>
+<meta name="description" content="A turn-based time-dislocation puzzle game. Every move you make is replayed N turns later by a solid echo of yourself.">
+<meta name="theme-color" content="#0b0d12">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='%230b0d12'/><rect x='2' y='5' width='6' height='6' fill='%234dd6ff'/><rect x='4' y='7' width='2' height='2' fill='%230b0d12'/><rect x='7' y='6' width='6' height='6' fill='%23f5c542'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./src/styles.css">
 </head>
 <body>
 <div class="wrap">
 
   <header>
-    <h1>ECHO&nbsp;SHIFT <span>错位回声</span></h1>
-    <p class="rule">你走的每一步，会在 N 回合后由一个<b>回声</b>原样重演。回声是实体：它挡路，它踩得住压力板，它撞上你就是悖论。</p>
+    <h1>ECHO SHIFT</h1>
+    <p class="rule">Every move you make is replayed <b>N turns later</b> by an echo of yourself. Echoes are solid: they block you, they hold down pressure plates, and if one steps into you, that is a paradox.</p>
   </header>
 
   <main>
@@ -37,47 +40,47 @@
     </section>
 
     <aside class="side">
-      <div class="panel">
-        <div class="stat"><span>已用步数</span><b id="turns">0</b></div>
-        <div class="stat"><span>最优步数</span><b id="par">—</b></div>
+      <div class="panel stats">
+        <div class="stat"><span>MOVES</span><b id="turns">0</b></div>
+        <div class="stat"><span>PAR</span><b id="par">—</b></div>
       </div>
 
       <div class="panel">
         <div class="pad">
-          <button data-move="up" aria-label="上">↑</button>
-          <button data-move="left" aria-label="左">←</button>
-          <button data-move="wait" aria-label="原地等待" class="wait">等</button>
-          <button data-move="right" aria-label="右">→</button>
-          <button data-move="down" aria-label="下">↓</button>
+          <button data-move="up" aria-label="Move up">&#9650;</button>
+          <button data-move="left" aria-label="Move left">&#9664;</button>
+          <button data-move="wait" aria-label="Wait one turn" class="wait">WAIT</button>
+          <button data-move="right" aria-label="Move right">&#9654;</button>
+          <button data-move="down" aria-label="Move down">&#9660;</button>
         </div>
         <div class="actions">
-          <button id="btn-undo">撤销 <kbd>Z</kbd></button>
-          <button id="btn-restart">重来 <kbd>R</kbd></button>
+          <button id="btn-undo">UNDO <kbd>Z</kbd></button>
+          <button id="btn-restart">RESET <kbd>R</kbd></button>
         </div>
       </div>
 
       <div class="panel">
-        <h3>关卡</h3>
+        <h3>Levels</h3>
         <div class="dots" id="dots"></div>
       </div>
 
       <div class="panel legend">
-        <h3>图例</h3>
+        <h3>Legend</h3>
         <ul>
-          <li><i class="sw now"></i>你 · 现在</li>
-          <li><i class="sw echo"></i>回声 · 过去（虚线框是它下一步要去的格子）</li>
-          <li><i class="sw plate"></i>压力板 · 所有板都被踩住时，闸门开启</li>
-          <li><i class="sw gate"></i>闸门</li>
-          <li><i class="sw exit"></i>出口</li>
+          <li><i class="sw now"></i><span><b>YOU</b> — the present</span></li>
+          <li><i class="sw echo"></i><span><b>ECHO</b> — you, N turns ago. Corner ticks mark where it steps next.</span></li>
+          <li><i class="sw plate"></i><span><b>PLATE</b> — gates open while every plate is held down</span></li>
+          <li><i class="sw gate"></i><span><b>GATE</b></span></li>
+          <li><i class="sw exit"></i><span><b>EXIT</b></span></li>
         </ul>
-        <p class="tip">关键推论：<b>你在板上站了几回合，门就为你开几回合。</b></p>
+        <p class="tip">The rule that matters: <b>the gate stays open for as long as you stood on the plate.</b></p>
       </div>
     </aside>
   </main>
 
   <footer>
-    <span>方向键 / WASD 移动 · 空格 原地等待 · Z 撤销 · R 重来 · 手机可滑动</span>
-    <a href="https://github.com/yixuan1112-coder/echo-shift" target="_blank" rel="noopener">源码</a>
+    <span>ARROWS / WASD MOVE &middot; SPACE WAIT &middot; Z UNDO &middot; R RESET &middot; SWIPE ON MOBILE</span>
+    <a href="https://github.com/yixuan1112-coder/echo-shift" target="_blank" rel="noopener">SOURCE</a>
   </footer>
 </div>
 <script type="module" src="./src/main.js"></script>
