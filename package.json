@@ -8,6 +8,7 @@
   "scripts": {
     "test": "node --max-old-space-size=3000 tools/verify.mjs",
     "solve": "node --max-old-space-size=3000 tools/solve-one.mjs",
+    "solutions": "node --max-old-space-size=3000 tools/gen-solutions.mjs",
     "dev": "node tools/dev-server.mjs"
   },
   "engines": { "node": ">=18" }

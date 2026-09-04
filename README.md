@@ -27,6 +27,7 @@
 | 撤销 | `Z` / `U` / `Backspace` |
 | 重来本关 | `R` |
 | 切换关卡 | `[` `]` 或点击关卡号 |
+| **播放最优解 DEMO** | `D`，或点 DEMO 按钮；再按一次停止 |
 
 手机上滑动屏幕移动，轻点为等待。
 
@@ -48,28 +49,42 @@
 | 7 | CROWDED | −3 / −6 | 15 | 既要踩准，又不能相撞 |
 | 8 | TRIO | −2 / −4 / −6 | 12 | 三块板同时被踩住的那一瞬间 |
 
+## 每关都有 DEMO
+
+卡住了就按 **`D`**（或点侧栏的 DEMO 按钮），游戏会**逐步演示这一关的最优解**，
+按钮上实时显示进度（`STOP 7/13`），播放期间你的输入会被锁住，再按一次随时停下。
+
+这些演示不是我手写的提示，而是**求解器算出来的最优路线**：
+`src/solutions.js` 由 `npm run solutions` 从 BFS 生成，`npm test` 会校验它仍然
+最优且仍能通关——关卡一改，测试立刻报 `STALE` 并让你重新生成。
+
+文字版答案在 [`docs/SOLUTIONS.md`](docs/SOLUTIONS.md)（剧透警告），同样是自动生成的。
+里面的 `·` 表示**原地等待一回合**——常常是整局最关键的一步，因为"等待"正是你让回声
+在压力板上多停留的唯一办法。
+
 ## 关卡是被证明过的，不是试出来的
 
 `tools/solver.mjs` 是一个跑在**与游戏完全相同的规则引擎**上的广度优先求解器。
-`npm test` 对每一关断言三件事：
+`npm test` 对每一关断言四件事：
 
 1. **可解** —— 存在一条通关路线；
 2. **最优步数正确** —— 表格里的步数由 BFS 重新算出，改动关卡后如果最优解变了，CI 直接失败；
-3. **离开机制就无解** —— 把回声的延迟推到 10000 回合（等于没有回声）后，该关必须**变得无解**。
+3. **离开机制就无解** —— 把回声的延迟推到 10000 回合（等于没有回声）后，该关必须**变得无解**；
+4. **DEMO 的解法没过期** —— 存档的最优解必须仍能通关、且步数仍等于最优。
 
 第 3 条是最重要的：它保证回声机制是**承重的**，而不是装饰。任何一关如果不用回声也能过，测试就红。
 
 ```
-  #  level                    delay  optimal  echo-required   states   time
-  --------------------------------------------------------------------------
-  1  ECHO                     3      14       tutorial        117      2ms
-  2  HOLD THE PAST            3      9        yes             424      5ms
-  3  LINGER                   3      8        yes             434      2ms
-  4  BACKTRACK                5      17       yes             1002     3ms
-  5  EXACTLY FIVE             5      13       yes             25072    141ms
-  6  TWO OF YOU               3/6    13       yes             37310    249ms
-  7  CROWDED                  3/6    15       yes             56317    467ms
-  8  TRIO                     2/4/6  12       yes             8243     57ms
+  #  level                    delay  optimal  echo-required   demo   states   time
+  ---------------------------------------------------------------------------------
+  1  ECHO                     3      14       tutorial        ok     117      1ms
+  2  HOLD THE PAST            3      9        yes             ok     424      6ms
+  3  LINGER                   3      8        yes             ok     434      2ms
+  4  BACKTRACK                5      17       yes             ok     1002     3ms
+  5  EXACTLY FIVE             5      13       yes             ok     25072    133ms
+  6  TWO OF YOU               3/6    13       yes             ok     37310    164ms
+  7  CROWDED                  3/6    15       yes             ok     56317    210ms
+  8  TRIO                     2/4/6  12       yes             ok     8243     47ms
 ```
 
 ## 本地运行
@@ -78,7 +93,8 @@
 
 ```bash
 npm run dev        # http://localhost:5173
-npm test           # 验证全部关卡
+npm test           # 验证全部关卡（含 DEMO 解法是否过期）
+npm run solutions  # 重新生成 src/solutions.js 和 docs/SOLUTIONS.md
 npm run solve -- 8 # 打印第 8 关的最优解
 ```
 
@@ -105,6 +121,8 @@ npm run solve -- 8 # 打印第 8 关的最优解
 
 图例：`#` 墙 · `.` 地板 · `@` 你 · `X` 出口 · `p` 压力板 · `g` 闸门。
 闸门在**所有**压力板都被实体踩住时开启——所以 N 块板意味着你需要 N 个身体。
+
+加完关卡跑一次 `npm run solutions`，新关的 DEMO 和答案文档会自动补上。
 
 ## 设计笔记
 

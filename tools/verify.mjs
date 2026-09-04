@@ -6,9 +6,12 @@
  *   1. it is solvable,
  *   2. the optimal solution replays cleanly through the real engine,
  *   3. it is NOT solvable with the echoes disabled — i.e. the mechanic is
- *      load-bearing, not decoration.
+ *      load-bearing, not decoration,
+ *   4. the stored solution the in-game DEMO plays back is still optimal and
+ *      still wins — run `npm run solutions` if this drifts.
  */
 import { LEVELS } from '../src/levels.js';
+import { SOLUTIONS, decodeSolution } from '../src/solutions.js';
 import { solve, solveWithoutEchoes, replay } from './solver.mjs';
 
 let failures = 0;
@@ -38,6 +41,22 @@ for (const def of LEVELS) {
     failures++;
   }
 
+  // The DEMO plays this back, so it must still be a winning, optimal line.
+  const stored = decodeSolution(SOLUTIONS[def.id]);
+  if (!stored.length) {
+    console.error(`✗ L${def.id} "${def.title}" — no stored solution; run \`npm run solutions\``);
+    failures++;
+  } else {
+    const sr = replay(def, stored);
+    if (!sr.ok) {
+      console.error(`✗ L${def.id} "${def.title}" — stored solution does not win: ${sr.reason}; run \`npm run solutions\``);
+      failures++;
+    } else if (stored.length !== res.moves.length) {
+      console.error(`✗ L${def.id} "${def.title}" — stored solution is ${stored.length} moves but the optimum is ${res.moves.length}; run \`npm run solutions\``);
+      failures++;
+    }
+  }
+
   const bare = def.id === 1 ? { solved: true } : solveWithoutEchoes(def);
   const needsEcho = !bare.solved;
   if (def.id !== 1 && !needsEcho) {
@@ -51,13 +70,14 @@ for (const def of LEVELS) {
     delays: def.delays.join('/'),
     optimal: res.moves.length,
     needsEcho: def.id === 1 ? 'tutorial' : (needsEcho ? 'yes' : 'NO'),
+    demo: stored.length === res.moves.length ? 'ok' : 'STALE',
     states: res.explored,
     ms,
   });
 }
 
-console.log('\n  #  level                    delay  optimal  echo-required   states   time');
-console.log('  ' + '-'.repeat(74));
+console.log('\n  #  level                    delay  optimal  echo-required   demo   states   time');
+console.log('  ' + '-'.repeat(81));
 for (const r of rows) {
   if (r.status === 'UNSOLVABLE') {
     console.log(`  ${String(r.id).padEnd(3)}${r.title.padEnd(25)}  UNSOLVABLE`);
@@ -65,7 +85,7 @@ for (const r of rows) {
   }
   console.log(
     `  ${String(r.id).padEnd(3)}${r.title.padEnd(25)}${String(r.delays).padEnd(7)}` +
-    `${String(r.optimal).padEnd(9)}${String(r.needsEcho).padEnd(16)}${String(r.states).padEnd(9)}${r.ms}ms`
+    `${String(r.optimal).padEnd(9)}${String(r.needsEcho).padEnd(16)}${String(r.demo).padEnd(7)}${String(r.states).padEnd(9)}${r.ms}ms`
   );
 }
 console.log('');
@@ -74,4 +94,4 @@ if (failures) {
   console.error(`${failures} level(s) failed verification.`);
   process.exit(1);
 }
-console.log(`All ${LEVELS.length} levels verified: solvable, replayable, and echo-dependent.\n`);
+console.log(`All ${LEVELS.length} levels verified: solvable, echo-dependent, and the DEMO solutions are optimal.\n`);

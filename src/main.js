@@ -1,5 +1,6 @@
 /** Input, level flow and HUD. */
 import { LEVELS } from './levels.js';
+import { SOLUTIONS, decodeSolution } from './solutions.js';
 import { loadLevel, step, initialState } from './engine.js';
 import { createRenderer } from './render.js';
 
@@ -17,6 +18,7 @@ const el = {
   overlayTitle: document.getElementById('overlay-title'),
   overlayBody: document.getElementById('overlay-body'),
   overlayBtn: document.getElementById('overlay-btn'),
+  demo: document.getElementById('btn-demo'),
 };
 
 const SAVE_KEY = 'echo-shift/progress';
@@ -30,12 +32,15 @@ let index = 0;
 let board = null;
 let state = null;
 let undoStack = [];
+// DEMO plays back the solver's optimal line for the current level.
+let demo = null;
 
 function save() {
   try { localStorage.setItem(SAVE_KEY, String(unlocked)); } catch { /* ignore */ }
 }
 
 function loadIndex(i) {
+  stopDemo();
   index = Math.max(0, Math.min(LEVELS.length - 1, i));
   const def = LEVELS[index];
   const loaded = loadLevel(def);
@@ -65,6 +70,39 @@ function renderDots() {
 
 function updateHud() { el.turns.textContent = String(state.turn); }
 
+const DEMO_INTERVAL = 420;
+
+function setDemoLabel() {
+  if (!demo) { el.demo.textContent = 'DEMO'; el.demo.classList.remove('running'); return; }
+  el.demo.textContent = `STOP ${demo.i}/${demo.moves.length}`;
+  el.demo.classList.add('running');
+}
+
+function stopDemo() {
+  if (demo) clearInterval(demo.timer);
+  demo = null;
+  setDemoLabel();
+}
+
+function startDemo() {
+  const moves = decodeSolution(SOLUTIONS[LEVELS[index].id]);
+  if (!moves.length) return;
+  stopDemo();
+  restart();
+  demo = { moves, i: 0, timer: null };
+  setDemoLabel();
+  demo.timer = setInterval(() => {
+    if (!demo) return;
+    if (demo.i >= demo.moves.length) return stopDemo();
+    doMove(demo.moves[demo.i], true);
+    demo.i++;
+    setDemoLabel();
+    if (state.status !== 'playing') stopDemo();
+  }, DEMO_INTERVAL);
+}
+
+function toggleDemo() { demo ? stopDemo() : startDemo(); }
+
 function showOverlay(title, body, btn, action) {
   el.overlayTitle.textContent = title;
   el.overlayBody.textContent = body;
@@ -74,8 +112,9 @@ function showOverlay(title, body, btn, action) {
 }
 function hideOverlay() { el.overlay.classList.remove('show'); }
 
-function doMove(dir) {
+function doMove(dir, fromDemo = false) {
   if (!state || state.status !== 'playing') return;
+  if (demo && !fromDemo) return;               // hands off while the demo runs
   const next = step(board, state, dir);
   if (!next) return;
   undoStack.push(state);
@@ -94,11 +133,14 @@ function doMove(dir) {
     const perfect = state.turn === def.par;
     if (index + 1 >= unlocked) { unlocked = Math.min(LEVELS.length, index + 2); save(); renderDots(); }
     const last = index === LEVELS.length - 1;
+    const wasDemo = Boolean(demo);
     showOverlay(
-      perfect ? 'PERFECT' : 'CLEAR',
-      perfect
-        ? `Solved in ${state.turn} moves — that is the optimum.`
-        : `Solved in ${state.turn} moves. Par is ${def.par}.`,
+      wasDemo ? 'DEMO COMPLETE' : (perfect ? 'PERFECT' : 'CLEAR'),
+      wasDemo
+        ? `That is the optimal line: ${state.turn} moves. Hit RESET and try it yourself.`
+        : perfect
+          ? `Solved in ${state.turn} moves — that is the optimum.`
+          : `Solved in ${state.turn} moves. Par is ${def.par}.`,
       last ? 'REPLAY FROM 1' : 'NEXT LEVEL',
       () => loadIndex(last ? 0 : index + 1),
     );
@@ -106,6 +148,7 @@ function doMove(dir) {
 }
 
 function undo() {
+  stopDemo();
   if (!undoStack.length) return;
   state = undoStack.pop();
   renderer.reset();
@@ -134,7 +177,9 @@ window.addEventListener('keydown', (e) => {
   const dir = KEYS[e.code];
   if (dir) { e.preventDefault(); doMove(dir); return; }
   if (e.code === 'KeyZ' || e.code === 'KeyU' || e.code === 'Backspace') { e.preventDefault(); undo(); }
-  else if (e.code === 'KeyR') { e.preventDefault(); restart(); }
+  else if (e.code === 'KeyR') { e.preventDefault(); stopDemo(); restart(); }
+  else if (e.code === 'KeyD') { e.preventDefault(); toggleDemo(); }
+  else if (e.code === 'Escape') { e.preventDefault(); stopDemo(); }
   else if (e.code === 'BracketRight' && index + 1 < unlocked) loadIndex(index + 1);
   else if (e.code === 'BracketLeft') loadIndex(index - 1);
 });
@@ -144,7 +189,8 @@ el.dots.addEventListener('click', (e) => {
   if (b) loadIndex(Number(b.dataset.i));
 });
 document.getElementById('btn-undo').onclick = undo;
-document.getElementById('btn-restart').onclick = restart;
+document.getElementById('btn-restart').onclick = () => { stopDemo(); restart(); };
+el.demo.onclick = toggleDemo;
 for (const b of document.querySelectorAll('[data-move]')) {
   b.onclick = () => doMove(b.dataset.move);
 }

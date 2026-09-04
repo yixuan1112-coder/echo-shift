@@ -69,6 +69,10 @@ kbd{font:400 9px/1 var(--pixel);color:var(--dim);border:2px solid var(--line);pa
 .pad button[data-move="down"]{grid-area:3/2}
 .actions{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
 .actions button{padding:9px 4px;font-size:9px}
+.demo{width:100%;margin-top:6px;padding:10px 4px;font-size:9px;
+  border-color:#244b5e;color:var(--echo);background:#0f1e26}
+.demo:hover:not(:disabled){border-color:var(--echo);background:#13262f}
+.demo.running{border-color:var(--gate);color:#ffb3bd;background:#2a1116}
 
 .dots{display:flex;flex-wrap:wrap;gap:6px}
 .dot{width:32px;padding:8px 0;text-align:center;font-size:11px}
