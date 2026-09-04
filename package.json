@@ -1,0 +1,14 @@
+{
+  "name": "echo-shift",
+  "version": "1.0.0",
+  "description": "A turn-based time-dislocation puzzle game. Every move you make is replayed N turns later by a solid Echo of yourself.",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "test": "node --max-old-space-size=3000 tools/verify.mjs",
+    "solve": "node --max-old-space-size=3000 tools/solve-one.mjs",
+    "dev": "node tools/dev-server.mjs"
+  },
+  "engines": { "node": ">=18" }
+}

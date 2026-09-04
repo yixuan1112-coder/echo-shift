@@ -1,0 +1,18 @@
+name: verify levels
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      # Proves every level is solvable, that its recorded par is the true
+      # optimum, and that it stays unsolvable without the echo mechanic.
+      - run: npm test
