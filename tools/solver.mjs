@@ -7,9 +7,9 @@
  * keeps the space small. Nodes hold a parent pointer rather than a copied
  * path, so the frontier stays flat in memory.
  */
-import { loadLevel, step, stateKey } from '../src/engine.js';
+import { loadLevel, step, stateKey, DIRECTIONS } from '../src/engine.js';
 
-const DIRS = ['up', 'down', 'left', 'right', 'wait'];
+const DIRS = DIRECTIONS;
 
 export function solve(def, { maxNodes = 3_000_000 } = {}) {
   const { board, state } = loadLevel(def);
@@ -31,7 +31,7 @@ export function solve(def, { maxNodes = 3_000_000 } = {}) {
     for (const dir of DIRS) {
       const next = step(board, cur, dir);
       if (!next) continue;                     // illegal move; no time passes
-      if (next.status === 'paradox') continue; // dead branch
+      if (next.status === 'paradox' || next.status === 'stuck') continue; // dead branch
       if (next.status === 'won') {
         return { solved: true, moves: [...pathTo(idx), dir], explored: nodes.length, board };
       }
@@ -47,9 +47,13 @@ export function solve(def, { maxNodes = 3_000_000 } = {}) {
   return { solved: false, reason: 'search exhausted', explored: nodes.length, board };
 }
 
-/** Same level with the echoes pushed out of reach: proves they are required. */
+/**
+ * Same level with no echoes at all: proves they are required.
+ * (Using an enormous delay instead would blow up the state key, since the key
+ * carries `maxDelay + 1` positions and would stop deduplicating.)
+ */
 export function solveWithoutEchoes(def, opts) {
-  return solve({ ...def, delays: [10_000] }, opts);
+  return solve({ ...def, delays: [] }, opts);
 }
 
 /** Replay a move list through the engine and report what really happened. */
@@ -61,6 +65,7 @@ export function replay(def, moves) {
     if (!n) return { ok: false, reason: `illegal move "${dir}" at turn ${s.turn}` };
     s = n;
     if (s.status === 'paradox') return { ok: false, reason: `paradox at turn ${s.turn}` };
+    if (s.status === 'stuck') return { ok: false, reason: `stuck with no legal move at turn ${s.turn}` };
     if (s.status === 'won') return { ok: true, turns: s.turn };
   }
   return { ok: false, reason: 'ran out of moves without reaching the exit' };

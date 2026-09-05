@@ -101,7 +101,11 @@ function startDemo() {
   }, DEMO_INTERVAL);
 }
 
-function toggleDemo() { demo ? stopDemo() : startDemo(); }
+function toggleDemo() {
+  // Drop focus, or a later Space/Enter would re-trigger the button.
+  el.demo.blur();
+  demo ? stopDemo() : startDemo();
+}
 
 function showOverlay(title, body, btn, action) {
   el.overlayTitle.textContent = title;
@@ -125,6 +129,13 @@ function doMove(dir, fromDemo = false) {
     showOverlay(
       'PARADOX',
       'An echo stepped into your tile. It only ever replays your own route, so that collision is something you set up several turns ago.',
+      'UNDO',
+      undo,
+    );
+  } else if (state.status === 'stuck') {
+    showOverlay(
+      'STUCK',
+      'Every direction is blocked and passing your turn is not allowed. Walk yourself somewhere with an exit next time.',
       'UNDO',
       undo,
     );
@@ -169,7 +180,6 @@ const KEYS = {
   ArrowDown: 'down', KeyS: 'down',
   ArrowLeft: 'left', KeyA: 'left',
   ArrowRight: 'right', KeyD: 'right',
-  Space: 'wait', Period: 'wait', KeyE: 'wait',
 };
 
 window.addEventListener('keydown', (e) => {
@@ -195,7 +205,7 @@ for (const b of document.querySelectorAll('[data-move]')) {
   b.onclick = () => doMove(b.dataset.move);
 }
 
-// Touch: swipe to move, tap to wait.
+// Touch: swipe to move. A tap does nothing — there is no waiting.
 let touch = null;
 canvas.addEventListener('touchstart', (e) => {
   const t = e.changedTouches[0];
@@ -207,7 +217,7 @@ canvas.addEventListener('touchend', (e) => {
   const dx = t.clientX - touch.x;
   const dy = t.clientY - touch.y;
   touch = null;
-  if (Math.abs(dx) < 24 && Math.abs(dy) < 24) return doMove('wait');
+  if (Math.abs(dx) < 24 && Math.abs(dy) < 24) return;   // no waiting: a tap does nothing
   doMove(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up'));
 }, { passive: true });
 

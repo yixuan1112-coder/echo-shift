@@ -7,9 +7,9 @@ by `npm test`. The in-game **DEMO** button plays exactly these back.
 `·` means *wait one turn* — usually the most important move on the board,
 because waiting is how you make an echo linger on a plate.
 
-## 1. ECHO  — 14 moves, echo -3
+## 1. STEP  — 14 moves, echo -3
 
-> Take a few steps, then look behind you. That flickering thing is you, three turns ago.
+> There is no waiting in this game — every turn you must move. Walk a while, then look behind you: that is you, three turns ago.
 
 ```
 #########
@@ -21,37 +21,37 @@ because waiting is how you make an echo linger on a plate.
 
 → → → → → → ↓ ↓ ← ← ← ← ← ←
 
-## 2. HOLD THE PAST  — 9 moves, echo -3
+## 2. BLINK  — 8 moves, echo -3
 
-> A gate is open only while every plate is held down. You cannot be in two places at once — but three turns ago, you can.
+> A gate opens only while a plate is held. You cannot stand still, so your echo can only touch the plate for a single turn — the gate blinks. Be at the doorway on exactly that turn.
 
 ```
 #########
 #@..#X..#
 #...g...#
-#.p.#...#
+#p..#...#
 #########
 ```
 
-↓ ↓ → ↑ → · → → ↑
+↓ ↓ ↑ → → → → ↑
 
-## 3. LINGER  — 8 moves, echo -3
+## 3. DETOUR  — 10 moves, echo -4
 
-> The gate stays open for exactly as long as you stood on the plate. A plate this close to the gate means standing there longer.
+> The plate is closer to the door than the delay is long. You cannot wait out the difference, so you have to walk it off — and a detour always costs an even number of turns.
 
 ```
-#########
-#@.p#...#
-#...g.X.#
-#...#...#
-#########
+##########
+#@..#X...#
+#...g....#
+#.p.#....#
+##########
 ```
 
-→ → ↓ ↑ ↓ → → →
+↓ ↓ → ↑ ↑ ↓ → → → ↑
 
-## 4. BACKTRACK  — 17 moves, echo -5
+## 4. DEAD END  — 17 moves, echo -5
 
-> Your echo retraces the way you came. In a one-tile dead end you will always meet it head-on — unless you duck into the alcove and let it pass.
+> Your echo retraces the way you came, and in a one-tile corridor you cannot dodge or wait. Use the alcove, and mind that with an odd delay the danger is swapping places with it.
 
 ```
 ##########
@@ -64,25 +64,40 @@ because waiting is how you make an echo linger on a plate.
 
 ↓ ↓ → ← ↑ ↓ ↓ ↑ ↑ ↑ → → → → → → →
 
-## 5. EXACTLY FIVE  — 13 moves, echo -5
+## 5. RING VAULT  — 14 moves, echo -6
 
-> Plate to gate is five steps. The delay is five turns. Nothing to spare.
+> One loop of corridor, one plate, one vault. The only question is where on the ring you should be when the blink comes.
 
 ```
-##########
-#@...#X..#
-#....#...#
-#....g...#
-#....#...#
-#p...#...#
-##########
+#########
+#@......#
+#.#####.#
+#.#...#.#
+#.#.X.#.#
+#.#g###.#
+#p......#
+#########
 ```
 
-↓ ↓ ↓ ↓ ↑ ↑ → → → → → ↑ ↑
+↓ ↓ ↓ ↓ ↓ ↑ ↑ ↓ ↓ → → ↑ ↑ →
 
-## 6. TWO OF YOU  — 13 moves, echo -3 / -6
+## 6. TWO DOORS  — 14 moves, echo -5
 
-> Two plates, two echoes. Three-turns-ago holds one, six-turns-ago holds the other, and you walk through the gap.
+> Two gates means two blinks, which means visiting the plate twice — and the gap between your two visits has to match the gap between the doors exactly.
+
+```
+###########
+#@..#...#.#
+#.p.g...g.#
+#...#...#X#
+###########
+```
+
+↓ → ↑ ↓ ↑ ↓ → → → → → → → ↓
+
+## 7. TWO OF YOU  — 13 moves, echo -3 / -6
+
+> Two plates, and every plate must be held at once. Three-turns-ago takes one, six-turns-ago takes the other, and you have to be somewhere else entirely.
 
 ```
 ###########
@@ -95,24 +110,9 @@ because waiting is how you make an echo linger on a plate.
 
 → → → ↓ ↓ ← ↑ → ↓ → → → →
 
-## 7. CROWDED  — 15 moves, echo -3 / -6
+## 8. TRIO  — 14 moves, echo -4 / -6 / -8
 
-> Less room now. Hit both plates on time, and keep out of your own way.
-
-```
-############
-#@...p#....#
-#.....#....#
-#...p.g...X#
-#.....#....#
-############
-```
-
-→ → → → ↓ ↓ ← ↑ → ↓ → → → → →
-
-## 8. TRIO  — 12 moves, echo -2 / -4 / -6
-
-> Three plates, three echoes, two turns apart. The whole route is one clock — a single wasted step breaks it.
+> Three plates, three echoes, two turns apart. Your route through those plates is the same route all three of them will walk — arrange it so they land together.
 
 ```
 ##########
@@ -124,7 +124,81 @@ because waiting is how you make an echo linger on a plate.
 ##########
 ```
 
-↓ ↓ ↓ → ↑ ↑ → ↓ → → → →
+↓ ↓ ↑ → ↓ ↓ ↑ ↓ → ↑ → → → →
+
+## 9. ASYMMETRY  — 19 moves, echo -7
+
+> The two rooms are not the same width, so the two blinks you need are not evenly spaced. Work out the second gap before you commit to the first.
+
+```
+###############
+#@..#...#.....#
+#.p.g...g....X#
+#...#...#.....#
+###############
+```
+
+↓ → ↑ ↓ ↑ ↓ ↑ ↓ → → → → → → → → → → →
+
+## 10. THE LONG WAY  — 18 moves, echo -2 / -7
+
+> Room enough to wander, which is the trap: both plates must be covered on the same turn by echoes that are five turns apart.
+
+```
+#############
+#@...p#.....#
+#.....#.....#
+#.....g....X#
+#..p..#.....#
+#.....#.....#
+#############
+```
+
+↓ ↓ ↓ → → ↑ ↑ ↑ → → ↓ ↓ → → → → → →
+
+## 11. DEEPER  — 21 moves, echo -9
+
+> Same rooms, nine turns of delay. Everything you do now lands a very long time from now.
+
+```
+###############
+#@..#...#.....#
+#.p.g...g....X#
+#...#...#.....#
+###############
+```
+
+↓ → ↑ ↓ ↑ ↓ ↑ ↓ ↑ ↓ → → → → → → → → → → →
+
+## 12. CLOCKWORK  — 20 moves, echo -4 / -9
+
+> Two plates, two echoes, five turns apart, in a room big enough to lose yourself in. There is exactly one shape of path that lines them up.
+
+```
+#############
+#@...p#.....#
+#.....#.....#
+#.....g....X#
+#..p..#.....#
+#.....#.....#
+#############
+```
+
+↓ ↓ ↓ → → ↑ ↑ ↑ → → ↓ ↑ ↓ ↓ → → → → → →
+
+## 13. THREE DOORS  — 24 moves, echo -9
+
+> Three gates, one plate, nine turns of delay. You must stand on that plate four separate times, at the right spacing, before you take a single step towards the first door.
+
+```
+#################
+#@..#...#...#...#
+#.p.g...g...g...#
+#...#...#...#..X#
+#################
+```
+
+↓ → ↑ ↓ ↑ ↓ ↑ ↓ ↑ ↓ → → → → → → → → → → → ↓ → →
 
 ---
 

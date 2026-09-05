@@ -5,15 +5,23 @@
  * (tools/verify.mjs) run the exact same code, so a level that the solver
  * proves solvable is solvable in the actual game.
  *
- * THE ONE RULE
- * ------------
- * Every move you make is recorded. `delay` turns later an Echo re-walks it.
- * Echoes are solid: they block you, they hold down pressure plates, and if
- * one steps into you, that is a paradox and the run resets.
+ * THE TWO RULES
+ * -------------
+ * 1. Every move you make is recorded. `delay` turns later an Echo re-walks it.
+ *    Echoes are solid: they block you, they hold down pressure plates, and if
+ *    one steps into you, that is a paradox.
+ * 2. You MUST move every turn. There is no waiting.
  *
- * The consequence that makes the whole game: an echo stands on a plate for
- * exactly as many turns as you did, so *how long you loiter in the past is
- * how long the gate stays open in the future*.
+ * Rule 2 is what makes this hard. You cannot park on a plate, so an echo can
+ * only ever touch a plate for a single turn at a time — a gate does not stay
+ * open, it *blinks*. Time cannot be padded for free either: the only way to
+ * spend a turn is to walk somewhere, and your echo will walk it again later.
+ *
+ * It also imposes a parity law. Every move flips (x + y) mod 2, so your
+ * position parity at turn t is fixed. An echo `d` turns behind can therefore
+ * only ever land on your tile when d is even, and can only ever swap through
+ * you when d is odd — which kind of paradox threatens you is decided the
+ * moment a level picks its delays.
  */
 
 export const WALL = '#';
@@ -28,8 +36,9 @@ export const MOVES = {
   down:  { dx: 0, dy: 1 },
   left:  { dx: -1, dy: 0 },
   right: { dx: 1, dy: 0 },
-  wait:  { dx: 0, dy: 0 },
 };
+
+export const DIRECTIONS = Object.keys(MOVES);
 
 /** Parse a level definition into an immutable board + an initial state. */
 export function loadLevel(def) {
@@ -69,7 +78,7 @@ export function loadLevel(def) {
     title: def.title,
     hint: def.hint ?? '',
     w, h, cells, spawn, exit, plates, gates, delays,
-    maxDelay: delays[delays.length - 1],
+    maxDelay: delays.length ? delays[delays.length - 1] : 0,
   };
   return { board, state: initialState(board) };
 }
@@ -81,7 +90,7 @@ export function initialState(board) {
     // Only the last `maxDelay + 1` positions can still matter to an echo, so
     // the trail is bounded. trail[trail.length - 1] is always where you are now.
     trail: [{ ...board.spawn }],
-    status: 'playing', // 'playing' | 'won' | 'paradox'
+    status: 'playing', // 'playing' | 'won' | 'paradox' | 'stuck'
   };
 }
 
@@ -112,7 +121,8 @@ const same = (a, b) => a && b && a.x === b.x && a.y === b.y;
 /**
  * Gates are powered when EVERY plate carries an entity (you or an echo).
  * Evaluated from the CURRENT positions, before anyone moves, so what you see
- * on screen is what you can walk through this turn.
+ * on screen is what you can walk through this turn. With no waiting allowed,
+ * nobody can hold a plate for two turns running, so this blinks.
  */
 export function gatesOpen(board, state) {
   if (board.plates.length === 0) return true;
@@ -157,7 +167,10 @@ export function step(board, state, dir) {
     if (same(echoesNow[k], pos) && same(e, state.pos)) { next.status = 'paradox'; return next; }
   }
 
-  if (same(pos, board.exit)) next.status = 'won';
+  if (same(pos, board.exit)) { next.status = 'won'; return next; }
+
+  // No waiting means having no legal move is itself a way to lose.
+  if (!DIRECTIONS.some((d) => canMove(board, next, d))) next.status = 'stuck';
   return next;
 }
 

@@ -17,7 +17,7 @@
 
   <header>
     <h1>ECHO SHIFT</h1>
-    <p class="rule">Every move you make is replayed <b>N turns later</b> by an echo of yourself. Echoes are solid: they block you, they hold down pressure plates, and if one steps into you, that is a paradox.</p>
+    <p class="rule">Every move you make is replayed <b>N turns later</b> by an echo of yourself. Echoes are solid: they block you, they hold down pressure plates, and if one steps into you, that is a paradox. <b>You must move every turn</b> — there is no waiting, so nobody can hold a plate for two turns running and a gate never stays open. It blinks.</p>
   </header>
 
   <main>
@@ -49,7 +49,7 @@
         <div class="pad">
           <button data-move="up" aria-label="Move up">&#9650;</button>
           <button data-move="left" aria-label="Move left">&#9664;</button>
-          <button data-move="wait" aria-label="Wait one turn" class="wait">WAIT</button>
+          <span class="nowait" aria-hidden="true">NO<br>WAIT</span>
           <button data-move="right" aria-label="Move right">&#9654;</button>
           <button data-move="down" aria-label="Move down">&#9660;</button>
         </div>
@@ -70,17 +70,17 @@
         <ul>
           <li><i class="sw now"></i><span><b>YOU</b> — the present</span></li>
           <li><i class="sw echo"></i><span><b>ECHO</b> — you, N turns ago. Corner ticks mark where it steps next.</span></li>
-          <li><i class="sw plate"></i><span><b>PLATE</b> — gates open while every plate is held down</span></li>
+          <li><i class="sw plate"></i><span><b>PLATE</b> — gates open while every plate is held down, which is never longer than one turn</span></li>
           <li><i class="sw gate"></i><span><b>GATE</b></span></li>
           <li><i class="sw exit"></i><span><b>EXIT</b></span></li>
         </ul>
-        <p class="tip">The rule that matters: <b>the gate stays open for as long as you stood on the plate.</b></p>
+        <p class="tip">The rule that matters: <b>you cannot wait, so a gate blinks for exactly one turn per visit.</b> Two gates in a row means going back to the plate twice, at exactly the right spacing.</p>
       </div>
     </aside>
   </main>
 
   <footer>
-    <span>ARROWS / WASD MOVE &middot; SPACE WAIT &middot; Z UNDO &middot; R RESET &middot; D DEMO &middot; SWIPE ON MOBILE</span>
+    <span>ARROWS / WASD MOVE &middot; Z UNDO &middot; R RESET &middot; D DEMO &middot; SWIPE ON MOBILE</span>
     <a href="https://github.com/yixuan1112-coder/echo-shift" target="_blank" rel="noopener">SOURCE</a>
   </footer>
 </div>

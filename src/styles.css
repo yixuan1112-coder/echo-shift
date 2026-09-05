@@ -64,7 +64,8 @@ kbd{font:400 9px/1 var(--pixel);color:var(--dim);border:2px solid var(--line);pa
 .pad button{padding:12px 0;font-size:10px}
 .pad button[data-move="up"]{grid-area:1/2}
 .pad button[data-move="left"]{grid-area:2/1}
-.pad .wait{grid-area:2/2;font-size:9px}
+.nowait{grid-area:2/2;display:grid;place-items:center;text-align:center;
+  font:400 8px/1.35 var(--pixel);letter-spacing:.08em;color:#39445c;border:2px dashed #232c3c}
 .pad button[data-move="right"]{grid-area:2/3}
 .pad button[data-move="down"]{grid-area:3/2}
 .actions{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
