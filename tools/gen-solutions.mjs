@@ -53,11 +53,16 @@ Every line below is the **optimal** solution, produced by \`tools/solver.mjs\`
 (breadth-first search over the same rules engine the game runs) and re-checked
 by \`npm test\`. The in-game **DEMO** button plays exactly these back.
 
-\`✶\` is a **strike**: it cuts down every sentinel next to you and spends the
-turn standing still. It is the only move that does not change your position, so
-it is also the only way to flip parity and the only way to make an echo pause on
-a plate — which is the only way a gate stays open for two turns instead of
+\`✶\` is a **strike**: it cuts down every adjacent sentinel you outmatch
+(POWER = 1 + shards held, against the sentinel's HP) and spends the turn
+standing still. It is the only move that does not change your position, so it is
+also the only way to flip parity and the only way to make an echo pause on a
+plate — which is the only way a gate stays open for two turns instead of
 blinking for one.
+
+Levels from 24 on are flagged \`noBacktrack\`: you may not step back onto last
+turn's tile, so none of these lines contain a U-turn. \`o\` in a grid is brittle
+floor — one crossing, then it falls.
 
 ${LEVELS.map((def) => {
   const moves = solve(def).moves;

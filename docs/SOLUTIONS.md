@@ -4,11 +4,16 @@ Every line below is the **optimal** solution, produced by `tools/solver.mjs`
 (breadth-first search over the same rules engine the game runs) and re-checked
 by `npm test`. The in-game **DEMO** button plays exactly these back.
 
-`✶` is a **strike**: it cuts down every sentinel next to you and spends the
-turn standing still. It is the only move that does not change your position, so
-it is also the only way to flip parity and the only way to make an echo pause on
-a plate — which is the only way a gate stays open for two turns instead of
+`✶` is a **strike**: it cuts down every adjacent sentinel you outmatch
+(POWER = 1 + shards held, against the sentinel's HP) and spends the turn
+standing still. It is the only move that does not change your position, so it is
+also the only way to flip parity and the only way to make an echo pause on a
+plate — which is the only way a gate stays open for two turns instead of
 blinking for one.
+
+Levels from 24 on are flagged `noBacktrack`: you may not step back onto last
+turn's tile, so none of these lines contain a U-turn. `o` in a grid is brittle
+floor — one crossing, then it falls.
 
 ## 1. STEP  — 14 moves, echo -3
 
@@ -343,6 +348,108 @@ blinking for one.
 ```
 
 ↓ → ↑ ↓ ↑ ← ↓ ↑ ↓ → ✶ → → → ↑ → ↓ ↑ ↓ → → → → → →
+
+## 24. CLOSED LOOP  — 14 moves, echo -8
+
+> Same two rooms as DETOUR, one new rule: you may not step back onto the tile you just left — the red bar shows which one. You still have to burn the difference before the blink, but now it has to be a loop.
+
+```
+##########
+#@..#X...#
+#...g....#
+#.p.#....#
+##########
+```
+
+↓ ↓ → ↑ ↑ ← ↓ ↓ → ↑ → → → ↑
+
+## 25. CRACKED  — 16 moves, echo -10
+
+> The dark tiles take your weight exactly once: step off one and it falls away behind you. Ten turns of delay to kill and a shrinking room to kill them in — work out which crossings you can afford to spend.
+
+```
+##########
+#@oo#X...#
+#o..g....#
+#.po#....#
+##########
+```
+
+↓ ↓ → ↑ → ↑ ← ↓ → ↓ ← ↑ → → → ↑
+
+## 26. WHETSTONE  — 18 moves, echo -7
+
+> The guard in the doorway has 2 HP and you swing for 1, so it is grey and the STRIKE button will not even light. Your power is 1 plus the shards you carry — the one in the alcove is not treasure, it is a weapon.
+
+```
+###########
+#@..#*.#..#
+#.p.g..2.X#
+#...#..#..#
+###########
+```
+
+↓ → ↑ ← ↓ ↓ → ↑ → → → ↑ → ↓ ✶ → → →
+
+## 27. THE ARMOURY  — 25 moves, echo -9
+
+> Two guards, 2 HP and 3 HP, and a shard in front of each. The order is forced; what is not forced is how you spend the nine turns before you ever reach the first door.
+
+```
+#############
+#@..#*.#*.#.#
+#.p.g..2..3X#
+#...#..#..#.#
+#############
+```
+
+↓ → ↑ ← ↓ ↓ → ↑ ↑ → ↓ → → ↑ → ↓ ✶ → → ↑ → ↓ ✶ → →
+
+## 28. LOOP ROOM  — 16 moves, echo -9
+
+> A wide room with a brittle block in the middle of it, so the loops you can walk are a real choice and there are only so many of each length. Pick the one that lands you at the door on the blink.
+
+```
+############
+#@....#X...#
+#..oo.#....#
+#.p...g....#
+#..oo.#....#
+#.....#....#
+############
+```
+
+↓ ↓ → ↑ ↑ ← ↓ ↓ → → → → → → ↑ ↑
+
+## 29. LONG LOOP  — 18 moves, echo -2 / -11
+
+> The same room, two echoes nine turns apart, and every tile you burn is a tile both of them will walk. This is the biggest search in the game — there is no wiggling your way into it.
+
+```
+############
+#@....#X...#
+#..oo.#....#
+#.p...g....#
+#..oo.#....#
+#.....#....#
+############
+```
+
+↓ ↓ → ↑ ↑ ← ↓ ↓ ↓ → ↑ → → → → → ↑ ↑
+
+## 30. VAULT OF ARMS  — 23 moves, echo -3 / -11
+
+> Everything at once: a double gate that only a held plate opens, then 2 HP, then 3 HP, with the shard that arms you for each lying in the corridor just before it. Three swings, and the first one is not at a guard.
+
+```
+##############
+#@..##..#..#.#
+#.p.gg*.2*.3X#
+#.S.##..#..#.#
+##############
+```
+
+↓ → ↑ ← ↓ ↓ ✶ → ↑ ↑ → ↓ → → → → ✶ → → → ✶ → →
 
 ---
 

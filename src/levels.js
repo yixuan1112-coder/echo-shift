@@ -2,7 +2,9 @@
  * Levels.
  *
  * Grid legend:  # wall   . floor   @ you   X exit   p pressure plate   g gate
- *                * shard   S sentinel
+ *                * shard   S sentinel (1 HP)   1-9 sentinel with that HP
+ *                o brittle floor (one crossing: it falls when you step off)
+ * `noBacktrack: true` additionally forbids stepping back onto last turn's tile.
  * `delays` lists one entry per echo: how many turns behind you it walks.
  *
  * `par` is the optimal solution length. It is not hand-written trivia:
@@ -31,6 +33,22 @@
  *            and that is the only way a gate stays open instead of blinking.
  *            One swing clears every sentinel around you, so a given tile is
  *            worth exactly one pause, no matter how many you crowd next to it.
+ *
+ * From L24 on, two more, both aimed at the same thing — pacing on the spot
+ * (the ↑↓↑↓ that padded most of the solutions above) is time spent without a
+ * decision in it, so it goes:
+ *
+ *   HP       Sentinels written as digits carry that much HP, and the only
+ *            thing that beats HP is shards: POWER = 1 + shards held. A 3 HP
+ *            guard costs two shards first, which turns a level into a chain —
+ *            fetch, kill, fetch, kill. Too weak and no swing is offered at
+ *            all, so a guard you cannot beat is not a free pause either.
+ *   BRITTLE  `o` collapses the moment you step off it. One crossing, never a
+ *            place to bounce.
+ *   noBacktrack  You may not return to last turn's tile, so burning a turn
+ *            has to be a real loop. WATCH OUT when designing: a one-tile
+ *            alcove becomes a death trap, because you can never step back out
+ *            of it — put shards ON a corridor, not in a pocket.
  *
  * Every level is checked: solvable, and (from L2 on) NOT solvable if the
  * echoes are taken away. Levels that carry a sentinel are checked a third
@@ -302,6 +320,89 @@ export const LEVELS = [
       '#@..#...#....#',
       '#.p.gg..gg..X#',
       '#.S.#...#....#',
+      '##############',
+    ],
+  },
+
+  // ---- no more pacing on the spot ----
+  {
+    id: 24, par: 14, title: 'CLOSED LOOP', delays: [8], noBacktrack: true,
+    hint: 'Same two rooms as DETOUR, one new rule: you may not step back onto the tile you just left — the red bar shows which one. You still have to burn the difference before the blink, but now it has to be a loop.',
+    grid: [
+      '##########',
+      '#@..#X...#',
+      '#...g....#',
+      '#.p.#....#',
+      '##########',
+    ],
+  },
+  {
+    id: 25, par: 16, title: 'CRACKED', delays: [10], noBacktrack: true,
+    hint: 'The dark tiles take your weight exactly once: step off one and it falls away behind you. Ten turns of delay to kill and a shrinking room to kill them in — work out which crossings you can afford to spend.',
+    grid: [
+      '##########',
+      '#@oo#X...#',
+      '#o..g....#',
+      '#.po#....#',
+      '##########',
+    ],
+  },
+  {
+    id: 26, par: 18, title: 'WHETSTONE', delays: [7], noBacktrack: true,
+    hint: 'The guard in the doorway has 2 HP and you swing for 1, so it is grey and the STRIKE button will not even light. Your power is 1 plus the shards you carry — the one in the alcove is not treasure, it is a weapon.',
+    grid: [
+      '###########',
+      '#@..#*.#..#',
+      '#.p.g..2.X#',
+      '#...#..#..#',
+      '###########',
+    ],
+  },
+  {
+    id: 27, par: 25, title: 'THE ARMOURY', delays: [9], noBacktrack: true,
+    hint: 'Two guards, 2 HP and 3 HP, and a shard in front of each. The order is forced; what is not forced is how you spend the nine turns before you ever reach the first door.',
+    grid: [
+      '#############',
+      '#@..#*.#*.#.#',
+      '#.p.g..2..3X#',
+      '#...#..#..#.#',
+      '#############',
+    ],
+  },
+  {
+    id: 28, par: 16, title: 'LOOP ROOM', delays: [9], noBacktrack: true,
+    hint: 'A wide room with a brittle block in the middle of it, so the loops you can walk are a real choice and there are only so many of each length. Pick the one that lands you at the door on the blink.',
+    grid: [
+      '############',
+      '#@....#X...#',
+      '#..oo.#....#',
+      '#.p...g....#',
+      '#..oo.#....#',
+      '#.....#....#',
+      '############',
+    ],
+  },
+  {
+    id: 29, par: 18, title: 'LONG LOOP', delays: [2, 11], noBacktrack: true,
+    hint: 'The same room, two echoes nine turns apart, and every tile you burn is a tile both of them will walk. This is the biggest search in the game — there is no wiggling your way into it.',
+    grid: [
+      '############',
+      '#@....#X...#',
+      '#..oo.#....#',
+      '#.p...g....#',
+      '#..oo.#....#',
+      '#.....#....#',
+      '############',
+    ],
+  },
+  {
+    id: 30, par: 23, title: 'VAULT OF ARMS', delays: [3, 11], noBacktrack: true,
+    hint: 'Everything at once: a double gate that only a held plate opens, then 2 HP, then 3 HP, with the shard that arms you for each lying in the corridor just before it. Three swings, and the first one is not at a guard.',
+    grid: [
+      '##############',
+      '#@..##..#..#.#',
+      '#.p.gg*.2*.3X#',
+      '#.S.##..#..#.#',
       '##############',
     ],
   },

@@ -10,11 +10,24 @@
  *   3b. and, on any level carrying a sentinel, NOT solvable with the strike
  *      disabled either, so the attack is never just a locked door,
  *   4. the stored solution the in-game DEMO plays back is still optimal and
- *      still wins — run `npm run solutions` if this drifts.
+ *      still wins — run `npm run solutions` if this drifts,
+ *   5. and, on a `noBacktrack` level, that the optimal line really contains no
+ *      immediate U-turns — the `pace` column below.
  */
 import { LEVELS } from '../src/levels.js';
 import { SOLUTIONS, decodeSolution } from '../src/solutions.js';
 import { solve, solveWithoutEchoes, solveWithoutStrike, replay } from './solver.mjs';
+
+const INVERSE = { up: 'down', down: 'up', left: 'right', right: 'left' };
+
+/**
+ * How many turns of the optimal line are an immediate U-turn. Hopping between
+ * two tiles is how the early levels burn time, and it is time spent without a
+ * decision in it — `noBacktrack` levels must report 0, and this column is how
+ * you see at a glance which levels still allow it.
+ */
+const pacing = (moves) =>
+  moves.reduce((n, m, i) => n + (i > 0 && INVERSE[moves[i - 1]] === m ? 1 : 0), 0);
 
 let failures = 0;
 const rows = [];
@@ -68,7 +81,8 @@ for (const def of LEVELS) {
 
   // Same test for the attack: a sentinel that can simply be walked around is
   // scenery, and a level that never needs the pause does not need the sentinel.
-  const hasSentinel = def.grid.some((row) => row.includes('S'));
+  // `S` is shorthand for 1 HP; a digit is a sentinel with that much HP.
+  const hasSentinel = def.grid.some((row) => /[S1-9]/.test(row));
   let needsStrike = '-';
   if (hasSentinel) {
     needsStrike = solveWithoutStrike(def).solved ? 'NO' : 'yes';
@@ -78,11 +92,18 @@ for (const def of LEVELS) {
     }
   }
 
+  const pace = pacing(res.moves);
+  if (def.noBacktrack && pace > 0) {
+    console.error(`✗ L${def.id} "${def.title}" — noBacktrack is set but the optimal line still paces ${pace} time(s)`);
+    failures++;
+  }
+
   rows.push({
     id: def.id,
     title: def.title,
     delays: def.delays.join('/'),
     optimal: res.moves.length,
+    pace: def.noBacktrack ? `${pace} (banned)` : String(pace),
     needsEcho: def.id === 1 ? 'tutorial' : (needsEcho ? 'yes' : 'NO'),
     needsStrike,
     demo: stored.length === res.moves.length ? 'ok' : 'STALE',
@@ -91,8 +112,8 @@ for (const def of LEVELS) {
   });
 }
 
-console.log('\n  #  level                    delay  optimal  echo-required  strike  demo   states   time');
-console.log('  ' + '-'.repeat(89));
+console.log('\n  #  level                    delay  optimal  echo-required  strike  pace       demo   states   time');
+console.log('  ' + '-'.repeat(100));
 for (const r of rows) {
   if (r.status === 'UNSOLVABLE') {
     console.log(`  ${String(r.id).padEnd(3)}${r.title.padEnd(25)}  UNSOLVABLE`);
@@ -100,7 +121,7 @@ for (const r of rows) {
   }
   console.log(
     `  ${String(r.id).padEnd(3)}${r.title.padEnd(25)}${String(r.delays).padEnd(7)}` +
-    `${String(r.optimal).padEnd(9)}${String(r.needsEcho).padEnd(15)}${String(r.needsStrike).padEnd(8)}${String(r.demo).padEnd(7)}${String(r.states).padEnd(9)}${r.ms}ms`
+    `${String(r.optimal).padEnd(9)}${String(r.needsEcho).padEnd(15)}${String(r.needsStrike).padEnd(8)}${String(r.pace).padEnd(11)}${String(r.demo).padEnd(7)}${String(r.states).padEnd(9)}${r.ms}ms`
   );
 }
 console.log('');

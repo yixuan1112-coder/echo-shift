@@ -31,6 +31,13 @@ export const SOLUTIONS = {
   21: 'druldrrulldrurdrrurrrdllllldl', // VAULT RUN, 29 moves
   22: 'drududududrrrrrrrrdr', // DEEP VAULT, 20 moves
   23: 'druduldudrsrrrurdudrrrrrr', // TWIN HOLDS, 25 moves
+  24: 'ddruulddrurrru', // CLOSED LOOP, 14 moves
+  25: 'ddruruldrdlurrru', // CRACKED, 16 moves
+  26: 'drulddrurrrurdsrrr', // WHETSTONE, 18 moves
+  27: 'drulddruurdrrurdsrrurdsrr', // THE ARMOURY, 25 moves
+  28: 'ddruulddrrrrrruu', // LOOP ROOM, 16 moves
+  29: 'ddruuldddrurrrrruu', // LONG LOOP, 18 moves
+  30: 'drulddsruurdrrrrsrrrsrr', // VAULT OF ARMS, 23 moves
 };
 
 /** Decode a stored solution into engine move names. */

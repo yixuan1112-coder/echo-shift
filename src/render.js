@@ -12,9 +12,9 @@
  * steps next, so every paradox is something you could have seen coming.
  */
 import {
-  WALL, EXIT, PLATE, GATE,
+  WALL, EXIT, PLATE, GATE, BRITTLE,
   tileAt, echoPositions, nextEchoPositions, gatesOpen,
-  shardAt, sentinelAt, exitOpen,
+  shardAt, sentinelAt, exitOpen, power, isBroken, previousPosition,
 } from './engine.js';
 
 const C = {
@@ -40,7 +40,13 @@ const C = {
   sentinel: '#9d6bff',
   sentinelDark: '#5b3a99',
   sentinelEye: '#ffe8a8',
+  sentinelTough: '#4a4260',     // stronger than you: no swing is even offered
+  sentinelToughDark: '#2f2a3d',
   strike: '#fff0a8',
+  brittle: '#3a3020',           // floor you get one crossing out of
+  brittleCrack: '#12100b',
+  voidRim: '#241d12',           // where a brittle tile used to be
+  barred: '#5a2530',            // last turn's tile, under noBacktrack
 };
 
 // 3x5 bitmap digits, so even the numbers are made of the same pixels.
@@ -129,6 +135,20 @@ export function createRenderer(canvas) {
     const px = (x) => ox + x * cell;
     const py = (y) => oy + y * cell;
 
+    /** Draw a short number out of the 3x5 bitmap font, `gs` pixels per dot. */
+    const glyphs = (text, gx, gy, gs, colour) => {
+      ctx.fillStyle = colour;
+      for (const ch of text) {
+        const g = GLYPH[ch];
+        if (g) {
+          for (let r = 0; r < 5; r++) {
+            for (let c = 0; c < 3; c++) if (g[r][c] === '1') R(gx + c * gs, gy + r * gs, gs, gs);
+          }
+        }
+        gx += gs * 4;
+      }
+    };
+
     ctx.fillStyle = C.bg;
     ctx.fillRect(0, 0, L.w, L.h);
 
@@ -142,10 +162,28 @@ export function createRenderer(canvas) {
         const X = px(x), Y = py(y);
         if (tile === WALL) { ctx.fillStyle = C.wall; R(X, Y, cell, cell); continue; }
 
-        ctx.fillStyle = C.floor;
+        if (tile === BRITTLE && isBroken(board, state, x, y)) {
+          // It fell. Leave a hole with a rim, so it never reads as "always wall".
+          ctx.fillStyle = C.bg;
+          R(X, Y, cell, cell);
+          ctx.fillStyle = C.voidRim;
+          R(X, Y, cell, u); R(X, Y + cell - u, cell, u);
+          R(X, Y, u, cell); R(X + cell - u, Y, u, cell);
+          continue;
+        }
+
+        ctx.fillStyle = tile === BRITTLE ? C.brittle : C.floor;
         R(X, Y, cell, cell);
-        ctx.fillStyle = C.floorDot;             // one dot per tile: a quiet lattice
-        R(X, Y, u, u);
+        if (tile === BRITTLE) {                 // a fault line across the slab
+          ctx.fillStyle = C.brittleCrack;
+          R(X + u, Y + u * 2, u * 2, u);
+          R(X + u * 3, Y + u * 3, u * 2, u);
+          R(X + u * 2, Y + u * 4, u * 2, u);
+          R(X + u * 4, Y + u * 5, u * 3, u);
+        } else {
+          ctx.fillStyle = C.floorDot;           // one dot per tile: a quiet lattice
+          R(X, Y, u, u);
+        }
         if (tileAt(board, x, y - 1) === WALL) { ctx.fillStyle = C.wallEdge; R(X, Y, cell, u); }
 
         if (tile === EXIT) {
@@ -207,18 +245,38 @@ export function createRenderer(canvas) {
     }
 
     // ---- sentinels: what blocks it ----
+    const pow = power(board, state);
     for (const p of board.sentinels) {
       if (sentinelAt(board, state, p.x, p.y) < 0) continue;    // cut down
       const X = px(p.x), Y = py(p.y);
-      ctx.fillStyle = C.sentinel;
+      // Colour is the whole rule: lit means you are strong enough to swing at
+      // it right now, grey means go and find another shard first.
+      const weak = p.hp <= pow;
+      ctx.fillStyle = weak ? C.sentinel : C.sentinelTough;
       R(X + u, Y + u * 2, u * 6, u * 5);
       R(X + u, Y + u, u, u);                                   // horns
       R(X + u * 6, Y + u, u, u);
-      ctx.fillStyle = C.sentinelDark;                          // weight at the base
+      ctx.fillStyle = weak ? C.sentinelDark : C.sentinelToughDark;
       R(X + u, Y + u * 6, u * 6, u);
-      ctx.fillStyle = C.sentinelEye;
-      const blink = Math.floor(time / 900) % 6 === 0 ? 0 : u;  // rare, quick blink
-      if (blink) { R(X + u * 2, Y + u * 3, u, u); R(X + u * 5, Y + u * 3, u, u); }
+      if (p.hp > 1) {
+        glyphs(String(p.hp), X + Math.round((cell - 3 * Math.max(2, Math.floor(u * 0.7))) / 2),
+               Y + u * 3, Math.max(2, Math.floor(u * 0.7)),
+               weak ? C.sentinelEye : '#8e86a8');
+      } else {
+        ctx.fillStyle = weak ? C.sentinelEye : '#8e86a8';
+        const blink = Math.floor(time / 900) % 6 === 0 ? 0 : u; // rare, quick blink
+        if (blink) { R(X + u * 2, Y + u * 3, u, u); R(X + u * 5, Y + u * 3, u, u); }
+      }
+    }
+
+    // ---- the tile noBacktrack has taken away from you this turn ----
+    if (board.noBacktrack && state.status === 'playing') {
+      const back = previousPosition(state);
+      if (back) {
+        const X = px(back.x), Y = py(back.y);
+        ctx.fillStyle = C.barred;
+        R(X + u * 2, Y + u * 3, u * 4, u);                     // a bar: no return
+      }
     }
 
     // ---- where each echo steps next ----
@@ -261,20 +319,11 @@ export function createRenderer(canvas) {
       const label = String(board.delays[i]);
       const gs = Math.max(2, Math.floor(u * 0.6));
       const gw = label.length * 4 - 1;
-      let gx = X + Math.round((cell - gw * gs) / 2);
+      const gx = X + Math.round((cell - gw * gs) / 2);
       const gy = Y + Math.round((cell - 5 * gs) / 2);
       ctx.fillStyle = C.bg;
       R(gx - gs, gy - gs, (gw + 2) * gs, 7 * gs);
-      ctx.fillStyle = C.echoA;
-      for (const ch of label) {
-        const g = GLYPH[ch];
-        if (g) {
-          for (let r = 0; r < 5; r++) {
-            for (let c = 0; c < 3; c++) if (g[r][c] === '1') R(gx + c * gs, gy + r * gs, gs, gs);
-          }
-        }
-        gx += gs * 4;
-      }
+      glyphs(label, gx, gy, gs, C.echoA);
     });
 
     // ---- you: the present ----

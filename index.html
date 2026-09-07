@@ -18,7 +18,8 @@
   <header>
     <h1>ECHO SHIFT</h1>
     <p class="rule">Every move you make is replayed <b>N turns later</b> by an echo of yourself. Echoes are solid: they block you, they hold down pressure plates, and if one steps into you, that is a paradox. <b>You must move every turn</b> — there is no waiting, so nobody can hold a plate for two turns running and a gate never stays open. It blinks.</p>
-    <p class="rule">Two things bend that. <b>Shards</b> seal the exit until you have collected every one, so the route is never just "reach the door". And a <b>sentinel</b> beside you can be <b>struck</b> — the one turn in the game you spend without moving. That single pause flips your parity, and later makes your echo stand still: the only way a plate is ever held twice running, and the only way a gate stays open instead of blinking.</p>
+    <p class="rule">Two things bend that. <b>Shards</b> seal the exit until you have collected every one, and each one you hold is a point of <b>power</b> — which is the only thing that beats a <b>sentinel</b>'s HP. Cutting one down is a <b>strike</b>: the one turn in the game you spend without moving. That single pause flips your parity, and later makes your echo stand still — the only way a plate is ever held twice running, and the only way a gate stays open instead of blinking.</p>
+    <p class="rule">Later levels also take away pacing on the spot: <b>brittle</b> floor collapses the moment you step off it, and a <b>NO BACKTRACK</b> level forbids returning to last turn's tile. Killing time has to be a real loop around something.</p>
   </header>
 
   <main>
@@ -45,6 +46,7 @@
         <div class="stat"><span>MOVES</span><b id="turns">0</b></div>
         <div class="stat"><span>PAR</span><b id="par">—</b></div>
         <div class="stat" id="shard-stat" hidden><span>SHARDS</span><b id="shards">0/0</b></div>
+        <div class="stat" id="power-stat" hidden><span>POWER</span><b id="power">1</b></div>
       </div>
 
       <div class="panel">
@@ -75,11 +77,13 @@
           <li><i class="sw plate"></i><span><b>PLATE</b> — gates open while every plate is held down, which is never longer than one turn</span></li>
           <li><i class="sw gate"></i><span><b>GATE</b></span></li>
           <li><i class="sw shard"></i><span><b>SHARD</b> — the exit stays sealed until you carry every one. Echoes walk straight over them; only the present picks things up.</span></li>
-          <li><i class="sw sentinel"></i><span><b>SENTINEL</b> — blocks its tile. <b>STRIKE</b> (space) cuts down every sentinel next to you and spends the turn standing still.</span></li>
+          <li><i class="sw sentinel"></i><span><b>SENTINEL</b> — blocks its tile, and carries HP. <b>STRIKE</b> (space) cuts down every adjacent sentinel you outmatch and spends the turn standing still. <b>POWER = 1 + shards held</b>, so a 2 HP guard costs you one shard first. Grey means you are not strong enough yet — and then no swing is offered at all, so there is no free pause in it either.</span></li>
+          <li><i class="sw brittle"></i><span><b>BRITTLE</b> — one crossing only. Step <em>off</em> it and it collapses. Striking does not break it, because a strike never leaves the tile.</span></li>
           <li><i class="sw exit"></i><span><b>EXIT</b> — barred while a shard is still out there</span></li>
         </ul>
         <p class="tip">The rule that matters: <b>you cannot wait, so a gate blinks for exactly one turn per visit.</b> Two gates in a row means going back to the plate twice, at exactly the right spacing.</p>
         <p class="tip">The exception: <b>strike while standing on a plate</b>, and the echo replaying that turn stands on it twice running — the gate stays open for two turns instead of one. One swing clears every sentinel around you, so each tile is worth exactly one pause.</p>
+        <p class="tip">On levels flagged <b>NO BACKTRACK</b> you may not step back onto the tile you stood on last turn — a red bar marks it. Burning a turn then means walking a real loop, not hopping on the spot. Striking clears the bar, because on that turn you never left.</p>
       </div>
     </aside>
   </main>

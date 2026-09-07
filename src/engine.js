@@ -32,11 +32,19 @@
  *          can pick anything up.
  *
  * SENTINEL A hostile that occupies its tile and blocks it until you cut it
- *          down.
+ *          down. Each one has HP, and the only thing that beats HP is
+ *          shards: your POWER is simply how many you are carrying, and a
+ *          sentinel can be cut down only when `power >= hp`, where power is
+ *          1 (your own arm) plus one per shard held. So a level's
+ *          monsters are a lock and its shards are the key, in an order the
+ *          designer chooses — you fetch a relic to be allowed past a guard
+ *          to reach the relic behind it.
  *
  * STRIKE   The attack, and the one crack in rule 2. It is legal only when a
- *          living sentinel stands next to you, it kills every sentinel
- *          adjacent to you, and it costs a turn *in which you do not move*.
+ *          sentinel you are strong enough to kill stands next to you, it
+ *          kills every adjacent sentinel within your power, and it costs a
+ *          turn *in which you do not move*. Standing next to something too
+ *          strong for you buys nothing at all — not even the pause.
  *          So each sentinel is a licensed pause, and a pause does two things
  *          nothing else in the game can do:
  *            - it FLIPS PARITY, because you spent a turn without changing
@@ -46,6 +54,24 @@
  *              stays open instead of blinking.
  *          Echoes replay your *movement*, not your actions: an echo repeating
  *          a struck turn simply stands there. It does not swing at anything.
+ *
+ * TWO WAYS A LEVEL CAN FORBID PACING ON THE SPOT
+ * ----------------------------------------------
+ * Burning turns by hopping between two tiles — the ↑↓↑↓ that padded most
+ * early solutions — is time spent without a decision in it. Two things take
+ * it away:
+ *
+ * BRITTLE  A floor tile you get exactly one crossing out of: the moment you
+ *          step *off* it, it collapses into a wall. You cannot bounce on it,
+ *          and you cannot come back through it. Echoes are not bodies and
+ *          walk the void regardless. Striking does not break the tile under
+ *          you, because a strike is a turn you never leave it.
+ *
+ * `noBacktrack` A per-level rule: you may not step back onto the tile you
+ *          stood on last turn. Every wasted turn then has to be a real loop
+ *          around something. The strike is the exception once more — spend a
+ *          turn without moving and "last turn's tile" is the one you are on,
+ *          so the way back opens up again.
  */
 
 export const WALL = '#';
@@ -55,7 +81,9 @@ export const PLATE = 'p';
 export const GATE = 'g';
 export const SPAWN = '@';
 export const SHARD = '*';
-export const SENTINEL = 'S';
+export const SENTINEL = 'S';       // shorthand for a 1 HP sentinel
+export const BRITTLE = 'o';        // one crossing only
+const SENTINEL_HP = /[1-9]/;       // a digit in the grid is a sentinel with that HP
 
 export const MOVES = {
   up:    { dx: 0, dy: -1 },
@@ -85,6 +113,7 @@ export function loadLevel(def) {
   const gates = [];
   const shards = [];
   const sentinels = [];
+  const brittle = [];
   let exit = null;
 
   for (let y = 0; y < h; y++) {
@@ -99,10 +128,11 @@ export function loadLevel(def) {
       } else if (ch === SHARD) {
         shards.push({ x, y });
         row.push(FLOOR);
-      } else if (ch === SENTINEL) {
-        sentinels.push({ x, y });
+      } else if (ch === SENTINEL || SENTINEL_HP.test(ch)) {
+        sentinels.push({ x, y, hp: ch === SENTINEL ? 1 : Number(ch) });
         row.push(FLOOR);
       } else {
+        if (ch === BRITTLE) brittle.push({ x, y });
         if (ch === PLATE) plates.push({ x, y });
         if (ch === GATE) gates.push({ x, y });
         if (ch === EXIT) exit = { x, y };
@@ -115,6 +145,13 @@ export function loadLevel(def) {
   if (!exit) throw new Error(`level ${def.id}: no exit (X)`);
   if (shards.length > 16) throw new Error(`level ${def.id}: at most 16 shards`);
   if (sentinels.length > 16) throw new Error(`level ${def.id}: at most 16 sentinels`);
+  if (brittle.length > 30) throw new Error(`level ${def.id}: at most 30 brittle tiles`);
+  const tooTough = sentinels.find((m) => m.hp > shards.length + 1);
+  if (tooTough) {
+    // Not an error — an unkillable sentinel is a legitimate wall — but it is
+    // almost always a typo, so say so out loud rather than shipping it quietly.
+    console.warn(`level ${def.id}: sentinel at ${tooTough.x},${tooTough.y} has ${tooTough.hp} HP but the level tops out at power ${shards.length + 1}, so it can never be killed`);
+  }
 
   const delays = [...def.delays].sort((a, b) => a - b);
   if (delays.some((d) => d < 1)) throw new Error(`level ${def.id}: delay must be >= 1`);
@@ -123,13 +160,16 @@ export function loadLevel(def) {
     id: def.id,
     title: def.title,
     hint: def.hint ?? '',
-    w, h, cells, spawn, exit, plates, gates, shards, sentinels, delays,
+    w, h, cells, spawn, exit, plates, gates, shards, sentinels, brittle, delays,
+    // Opt-in per level: no stepping back onto last turn's tile.
+    noBacktrack: Boolean(def.noBacktrack),
     maxDelay: delays.length ? delays[delays.length - 1] : 0,
     // Bit per shard; the exit unseals when `taken` reaches this.
     allShards: (1 << shards.length) - 1,
     // Position lookups, so the hot path never scans a list.
     shardAt: new Map(shards.map((p, i) => [key(p.x, p.y), i])),
     sentinelAt: new Map(sentinels.map((p, i) => [key(p.x, p.y), i])),
+    brittleAt: new Map(brittle.map((p, i) => [key(p.x, p.y), i])),
   };
   return { board, state: initialState(board) };
 }
@@ -143,6 +183,7 @@ export function initialState(board) {
     trail: [{ ...board.spawn }],
     taken: 0,   // bitmask of shards picked up
     slain: 0,   // bitmask of sentinels cut down
+    broken: 0,  // bitmask of brittle tiles that have already collapsed
     struck: false, // did the turn just played end in a strike? (for the renderer)
     status: 'playing', // 'playing' | 'won' | 'paradox' | 'stuck'
   };
@@ -158,6 +199,32 @@ export function shardAt(board, state, x, y) {
 export function sentinelAt(board, state, x, y) {
   const i = board.sentinelAt.get(key(x, y));
   return i === undefined || (state.slain >> i) & 1 ? -1 : i;
+}
+
+/** The living sentinel on (x, y), or null. */
+export function sentinelOn(board, state, x, y) {
+  const i = sentinelAt(board, state, x, y);
+  return i < 0 ? null : board.sentinels[i];
+}
+
+/**
+ * Your attack power: 1 for your own arm, plus 1 per shard you are carrying.
+ * So a 1 HP sentinel never needs anything, a 2 HP sentinel costs one shard,
+ * and the strongest thing a level can hold is `shards.length + 1` HP.
+ */
+export function power(board, state) {
+  return 1 + popcount(state.taken);
+}
+
+/** Has the brittle tile at (x, y) already fallen away? */
+export function isBroken(board, state, x, y) {
+  const i = board.brittleAt.get(key(x, y));
+  return i !== undefined && ((state.broken >> i) & 1) === 1;
+}
+
+/** The tile you stood on last turn, or null on turn 0. */
+export function previousPosition(state) {
+  return state.trail.length >= 2 ? state.trail[state.trail.length - 2] : null;
 }
 
 /** Shards still on the board. */
@@ -183,6 +250,11 @@ export function pastPosition(state, d) {
   return i >= 0 ? state.trail[i] : null;
 }
 
+/**
+ * The raw tile. BRITTLE reads as itself whether or not it has fallen — the
+ * renderer needs to tell a cracked floor from a hole, and `canMove` consults
+ * `isBroken` separately.
+ */
 export function tileAt(board, x, y) {
   if (x < 0 || y < 0 || x >= board.w || y >= board.h) return WALL;
   return board.cells[y][x];
@@ -224,6 +296,8 @@ export function canMove(board, state, dir) {
   if (t === GATE && !gatesOpen(board, state)) return false;
   if (t === EXIT && !exitOpen(board, state)) return false;   // sealed: shards first
   if (sentinelAt(board, state, nx, ny) >= 0) return false;    // something is in the way
+  if (isBroken(board, state, nx, ny)) return false;           // that floor is gone
+  if (board.noBacktrack && same(previousPosition(state), { x: nx, y: ny })) return false;
   return true;
 }
 
@@ -235,9 +309,11 @@ export function canMove(board, state, dir) {
  */
 export function canStrike(board, state) {
   if (state.status !== 'playing') return false;
+  const p = power(board, state);
   return DIRECTIONS.some((d) => {
     const m = MOVES[d];
-    return sentinelAt(board, state, state.pos.x + m.dx, state.pos.y + m.dy) >= 0;
+    const s = sentinelOn(board, state, state.pos.x + m.dx, state.pos.y + m.dy);
+    return Boolean(s) && s.hp <= p;
   });
 }
 
@@ -262,22 +338,29 @@ export function step(board, state, action) {
 
   let taken = state.taken;
   let slain = state.slain;
+  let broken = state.broken;
   if (striking) {
+    const p = power(board, state);
     for (const d of DIRECTIONS) {
       const m = MOVES[d];
       const i = sentinelAt(board, state, pos.x + m.dx, pos.y + m.dy);
-      if (i >= 0) slain |= 1 << i;          // one swing clears every neighbour
+      // One swing clears every neighbour — but only the ones you outmatch.
+      if (i >= 0 && board.sentinels[i].hp <= p) slain |= 1 << i;
     }
   } else {
     const si = shardAt(board, state, pos.x, pos.y);
     if (si >= 0) taken |= 1 << si;          // only the present can pick things up
+    // Leaving a brittle tile drops it. Striking does not, because a strike is
+    // a turn in which you never leave.
+    const bi = board.brittleAt.get(key(state.pos.x, state.pos.y));
+    if (bi !== undefined) broken |= 1 << bi;
   }
 
   const cap = board.maxDelay + 1;
   const trail = state.trail.length >= cap
     ? [...state.trail.slice(state.trail.length - cap + 1), pos]
     : [...state.trail, pos];
-  const next = { turn: state.turn + 1, pos, trail, taken, slain, struck: striking, status: 'playing' };
+  const next = { turn: state.turn + 1, pos, trail, taken, slain, broken, struck: striking, status: 'playing' };
 
   // Paradox: an echo walks into you, or you and an echo swap places.
   const echoesNow = echoPositions(board, state);
@@ -304,7 +387,9 @@ export function stateKey(board, state) {
   const phase = Math.min(state.turn, board.maxDelay);
   // Two extra characters carry what has been collected and what has been
   // killed — both are permanent, so they belong in the identity of a state.
-  let k = String.fromCharCode(phase, state.taken, state.slain);
+  // `broken` needs 30 bits, so it takes two characters; the rest fit in one.
+  let k = String.fromCharCode(phase, state.taken, state.slain,
+                              state.broken & 0x7fff, (state.broken >>> 15) & 0x7fff);
   for (const p of state.trail) k += String.fromCharCode(p.y * board.w + p.x);
   return k;
 }
