@@ -1,7 +1,7 @@
 /** Input, level flow and HUD. */
 import { LEVELS } from './levels.js';
 import { SOLUTIONS, decodeSolution } from './solutions.js';
-import { loadLevel, step, initialState } from './engine.js';
+import { loadLevel, step, initialState, canStrike, shardsLeft } from './engine.js';
 import { createRenderer } from './render.js';
 
 const canvas = document.getElementById('board');
@@ -13,6 +13,9 @@ const el = {
   turns: document.getElementById('turns'),
   par: document.getElementById('par'),
   delays: document.getElementById('delays'),
+  shards: document.getElementById('shards'),
+  shardStat: document.getElementById('shard-stat'),
+  strikeBtn: document.querySelector('[data-move="strike"]'),
   dots: document.getElementById('dots'),
   overlay: document.getElementById('overlay'),
   overlayTitle: document.getElementById('overlay-title'),
@@ -54,6 +57,8 @@ function loadIndex(i) {
   el.delays.innerHTML = board.delays
     .map((d) => `<span class="chip">ECHO -${d}</span>`)
     .join('');
+  // The shard counter is only meaningful on levels that have shards.
+  el.shardStat.hidden = board.shards.length === 0;
   hideOverlay();
   renderDots();
   updateHud();
@@ -68,12 +73,22 @@ function renderDots() {
   }).join('');
 }
 
-function updateHud() { el.turns.textContent = String(state.turn); }
+function updateHud() {
+  el.turns.textContent = String(state.turn);
+  el.shards.textContent = board.shards.length
+    ? `${board.shards.length - shardsLeft(board, state)}/${board.shards.length}`
+    : '—';
+  // Greying the button out is the only place the "a sentinel must be beside
+  // you" rule is visible, so it has to track the state every turn.
+  el.strikeBtn.disabled = !canStrike(board, state);
+}
 
 const DEMO_INTERVAL = 420;
 
 function setDemoLabel() {
-  if (!demo) { el.demo.textContent = 'DEMO'; el.demo.classList.remove('running'); return; }
+  // innerHTML, not textContent: the key hint is part of the label and would
+  // otherwise be wiped the first time the button is drawn.
+  if (!demo) { el.demo.innerHTML = 'DEMO <kbd>P</kbd>'; el.demo.classList.remove('running'); return; }
   el.demo.textContent = `STOP ${demo.i}/${demo.moves.length}`;
   el.demo.classList.add('running');
 }
@@ -135,7 +150,7 @@ function doMove(dir, fromDemo = false) {
   } else if (state.status === 'stuck') {
     showOverlay(
       'STUCK',
-      'Every direction is blocked and passing your turn is not allowed. Walk yourself somewhere with an exit next time.',
+      'Every direction is blocked, there is nothing beside you to strike, and passing your turn is not allowed. Walk yourself somewhere with a way out next time.',
       'UNDO',
       undo,
     );
@@ -180,15 +195,18 @@ const KEYS = {
   ArrowDown: 'down', KeyS: 'down',
   ArrowLeft: 'left', KeyA: 'left',
   ArrowRight: 'right', KeyD: 'right',
+  Space: 'strike', KeyE: 'strike',
 };
 
 window.addEventListener('keydown', (e) => {
   if (e.metaKey || e.ctrlKey) return;
   const dir = KEYS[e.code];
+  // preventDefault first: Space would otherwise activate whichever button
+  // happens to hold focus, and scroll the page on the way.
   if (dir) { e.preventDefault(); doMove(dir); return; }
   if (e.code === 'KeyZ' || e.code === 'KeyU' || e.code === 'Backspace') { e.preventDefault(); undo(); }
   else if (e.code === 'KeyR') { e.preventDefault(); stopDemo(); restart(); }
-  else if (e.code === 'KeyD') { e.preventDefault(); toggleDemo(); }
+  else if (e.code === 'KeyP') { e.preventDefault(); toggleDemo(); }
   else if (e.code === 'Escape') { e.preventDefault(); stopDemo(); }
   else if (e.code === 'BracketRight' && index + 1 < unlocked) loadIndex(index + 1);
   else if (e.code === 'BracketLeft') loadIndex(index - 1);
@@ -205,7 +223,8 @@ for (const b of document.querySelectorAll('[data-move]')) {
   b.onclick = () => doMove(b.dataset.move);
 }
 
-// Touch: swipe to move. A tap does nothing — there is no waiting.
+// Touch: swipe to move, tap to strike. A tap is not a way to pass the turn —
+// striking is only legal with a sentinel beside you.
 let touch = null;
 canvas.addEventListener('touchstart', (e) => {
   const t = e.changedTouches[0];
@@ -217,7 +236,7 @@ canvas.addEventListener('touchend', (e) => {
   const dx = t.clientX - touch.x;
   const dy = t.clientY - touch.y;
   touch = null;
-  if (Math.abs(dx) < 24 && Math.abs(dy) < 24) return;   // no waiting: a tap does nothing
+  if (Math.abs(dx) < 24 && Math.abs(dy) < 24) { doMove('strike'); return; }
   doMove(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up'));
 }, { passive: true });
 

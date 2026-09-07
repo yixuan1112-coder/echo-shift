@@ -11,7 +11,11 @@
  * cyan/magenta — one body, dislocated in time. Corner ticks mark where an echo
  * steps next, so every paradox is something you could have seen coming.
  */
-import { WALL, EXIT, PLATE, GATE, tileAt, echoPositions, nextEchoPositions, gatesOpen } from './engine.js';
+import {
+  WALL, EXIT, PLATE, GATE,
+  tileAt, echoPositions, nextEchoPositions, gatesOpen,
+  shardAt, sentinelAt, exitOpen,
+} from './engine.js';
 
 const C = {
   bg: '#0b0d12',
@@ -30,6 +34,13 @@ const C = {
   echoA: '#4dd6ff',
   echoB: '#ff5ea8',
   paradox: '#e05263',
+  shard: '#7ef0d5',
+  shardLight: '#dffff6',
+  sealed: '#2b3a33',      // the exit while shards are still out there
+  sentinel: '#9d6bff',
+  sentinelDark: '#5b3a99',
+  sentinelEye: '#ffe8a8',
+  strike: '#fff0a8',
 };
 
 // 3x5 bitmap digits, so even the numbers are made of the same pixels.
@@ -50,8 +61,10 @@ export function createRenderer(canvas) {
   const ctx = canvas.getContext('2d');
   let anim = new Map();
   const ditherCache = new Map();
+  // A strike is the only turn where nothing moves, so it needs its own tell.
+  let flash = { turn: -1, t: 0 };
 
-  function reset() { anim = new Map(); }
+  function reset() { anim = new Map(); flash = { turn: -1, t: 0 }; }
 
   function ease(key, target, dt) {
     const cur = anim.get(key);
@@ -137,14 +150,18 @@ export function createRenderer(canvas) {
 
         if (tile === EXIT) {
           // Corner brackets, pulsing in two discrete steps — no soft fades.
-          const inset = Math.floor(time / 480) % 2 ? u : 0;
-          ctx.fillStyle = C.exit;
+          // While shards are still out there the door is dead: no pulse, no
+          // colour, and a bar drawn straight across it.
+          const live = exitOpen(board, state);
+          const inset = live && Math.floor(time / 480) % 2 ? u : 0;
+          ctx.fillStyle = live ? C.exit : C.sealed;
           const a = u + inset, len = u * 2, t = u;
           const b = cell - a;
           R(X + a, Y + a, len, t);          R(X + a, Y + a, t, len);
           R(X + b - len, Y + a, len, t);    R(X + b - t, Y + a, t, len);
           R(X + a, Y + b - t, len, t);      R(X + a, Y + b - len, t, len);
           R(X + b - len, Y + b - t, len, t); R(X + b - t, Y + b - len, t, len);
+          if (!live) { ctx.fillStyle = C.sealed; R(X + u * 2, Y + u * 3.5, cell - u * 4, u); }
         }
 
         if (tile === PLATE) {
@@ -171,6 +188,37 @@ export function createRenderer(canvas) {
           }
         }
       }
+    }
+
+    // ---- shards: what seals the exit ----
+    for (const p of board.shards) {
+      if (shardAt(board, state, p.x, p.y) < 0) continue;      // already taken
+      const bob = Math.floor(time / 380) % 2 ? 0 : u;         // two frames, no tweening
+      const X = px(p.x), Y = py(p.y) + bob;
+      ctx.fillStyle = C.shard;                                 // a cut stone: 2/4/6/6/4/2
+      R(X + u * 3, Y + u,     u * 2, u);
+      R(X + u * 2, Y + u * 2, u * 4, u);
+      R(X + u,     Y + u * 3, u * 6, u * 2);
+      R(X + u * 2, Y + u * 5, u * 4, u);
+      R(X + u * 3, Y + u * 6, u * 2, u);
+      ctx.fillStyle = C.shardLight;                            // one lit facet
+      R(X + u * 3, Y + u * 2, u, u);
+      R(X + u * 2, Y + u * 3, u, u);
+    }
+
+    // ---- sentinels: what blocks it ----
+    for (const p of board.sentinels) {
+      if (sentinelAt(board, state, p.x, p.y) < 0) continue;    // cut down
+      const X = px(p.x), Y = py(p.y);
+      ctx.fillStyle = C.sentinel;
+      R(X + u, Y + u * 2, u * 6, u * 5);
+      R(X + u, Y + u, u, u);                                   // horns
+      R(X + u * 6, Y + u, u, u);
+      ctx.fillStyle = C.sentinelDark;                          // weight at the base
+      R(X + u, Y + u * 6, u * 6, u);
+      ctx.fillStyle = C.sentinelEye;
+      const blink = Math.floor(time / 900) % 6 === 0 ? 0 : u;  // rare, quick blink
+      if (blink) { R(X + u * 2, Y + u * 3, u, u); R(X + u * 5, Y + u * 3, u, u); }
     }
 
     // ---- where each echo steps next ----
@@ -241,6 +289,24 @@ export function createRenderer(canvas) {
     ctx.fillStyle = C.nowDark;                  // bevel: dark bottom-right
     R(X + u, Y + u * 6, body, u);
     R(X + u * 6, Y + u, u, body);
+
+    // A strike spends a turn without moving, so the only feedback is this:
+    // a ring thrown out over the four tiles the swing covered.
+    if (state.struck && state.turn !== flash.turn) flash = { turn: state.turn, t: 0.36 };
+    if (flash.t > 0) {
+      flash.t = Math.max(0, flash.t - dt);
+      const k = 1 - flash.t / 0.36;
+      const grow = Math.round(k * u * 6);
+      const edge = Math.max(1, Math.round(u / 2));
+      ctx.globalAlpha = 1 - k;
+      ctx.fillStyle = C.strike;
+      const rx = X - grow, ry = Y - grow, rw = cell + grow * 2;
+      R(rx, ry, rw, edge);
+      R(rx, ry + rw - edge, rw, edge);
+      R(rx, ry, edge, rw);
+      R(rx + rw - edge, ry, edge, rw);
+      ctx.globalAlpha = 1;
+    }
 
     if (state.status === 'paradox') {
       ctx.fillStyle = dither(C.paradox, u);

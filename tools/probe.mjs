@@ -10,7 +10,7 @@ import { solve, solveWithoutEchoes } from './solver.mjs';
 
 const mod = await import(process.argv[2]);
 const list = mod.CANDIDATES ?? mod.LEVELS;
-const arrow = { up: '↑', down: '↓', left: '←', right: '→' };
+const arrow = { up: '↑', down: '↓', left: '←', right: '→', strike: '✶' };
 
 console.log('  id  title              delay    optimal  echo   states    solution');
 console.log('  ' + '-'.repeat(96));

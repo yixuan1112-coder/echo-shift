@@ -2,6 +2,7 @@
  * Levels.
  *
  * Grid legend:  # wall   . floor   @ you   X exit   p pressure plate   g gate
+ *                * shard   S sentinel
  * `delays` lists one entry per echo: how many turns behind you it walks.
  *
  * `par` is the optimal solution length. It is not hand-written trivia:
@@ -18,8 +19,23 @@
  *   REVISIT n gates in series need n separate blinks, so you must return to
  *           the plate n times, spaced exactly as far apart as the gates are.
  *
+ * From L14 on, two more things are in play:
+ *
+ *   SHARD    the exit is barred until you are carrying every one of them, so
+ *            the route stops being "reach the door" and becomes "reach the
+ *            door having already been everywhere else".
+ *   SENTINEL blocks its tile until you STRIKE it. A strike is the only turn
+ *            you ever spend without moving, which makes it the only way to
+ *            flip parity — and, later, the only way an echo stands still. An
+ *            echo that stands still on a plate holds it for two turns running,
+ *            and that is the only way a gate stays open instead of blinking.
+ *            One swing clears every sentinel around you, so a given tile is
+ *            worth exactly one pause, no matter how many you crowd next to it.
+ *
  * Every level is checked: solvable, and (from L2 on) NOT solvable if the
- * echoes are taken away.
+ * echoes are taken away. Levels that carry a sentinel are checked a third
+ * way — they must be unsolvable if the strike is taken away, so the attack is
+ * load-bearing rather than scenery.
  */
 export const LEVELS = [
   {
@@ -174,6 +190,119 @@ export const LEVELS = [
       '#.p.g...g...g...#',
       '#...#...#...#..X#',
       '#################',
+    ],
+  },
+
+  // ---- shards and sentinels ----
+  {
+    id: 14, par: 10, title: 'RELIC', delays: [4],
+    hint: 'The door is barred. A shard is lying in the near room and the exit will not open until you are carrying it — so the question is no longer how to reach the door, it is what the trip to the shard does to your timing.',
+    grid: [
+      '##########',
+      '#@..#X...#',
+      '#...g....#',
+      '#.p.#....#',
+      '#..*#....#',
+      '##########',
+    ],
+  },
+  {
+    id: 15, par: 16, title: 'HOARD', delays: [5],
+    hint: 'Two shards, one on each side of the gate. You get exactly one blink through that door, so decide which shard you are collecting on which side of it before you take a step.',
+    grid: [
+      '###########',
+      '#@.*#..*..#',
+      '#.p.g.....#',
+      '#...#....X#',
+      '###########',
+    ],
+  },
+  {
+    id: 16, par: 11, title: 'THE GUARD', delays: [3],
+    hint: 'Something is standing in the only tile past the gate. Press space to strike it down — but a strike costs a turn in which you do not move, and you will be standing in the doorway when you spend it.',
+    grid: [
+      '##########',
+      '#@..#....#',
+      '#.p.gS..X#',
+      '#...#....#',
+      '##########',
+    ],
+  },
+  {
+    id: 17, par: 13, title: 'OFF BEAT', delays: [7],
+    hint: 'Nothing is in your way here. The plate and the door are simply an odd number of steps apart, and every move you make flips your parity — so the only turn that can fix it is the one turn that does not move you at all.',
+    grid: [
+      '##########',
+      '#@..#X...#',
+      '#...g....#',
+      '#.pS#....#',
+      '##########',
+    ],
+  },
+  {
+    id: 18, par: 13, title: 'HELD OPEN', delays: [6],
+    hint: 'Two gate tiles back to back: you need the door open on two consecutive turns, which no blink has ever given you. Strike while you are standing on the plate, and the echo replaying that turn will stand on it twice.',
+    grid: [
+      '##########',
+      '#@..#....#',
+      '#.p.gg..X#',
+      '#.S.#....#',
+      '##########',
+    ],
+  },
+  {
+    id: 19, par: 17, title: 'RELIQUARY', delays: [7],
+    hint: 'The shard is behind the gate and something is standing between you and it. You have one blink to get in, and the turn you spend swinging is a turn your echo will spend standing still.',
+    grid: [
+      '###########',
+      '#@..#..#..#',
+      '#.p.g.S*..#',
+      '#...#..#.X#',
+      '###########',
+    ],
+  },
+  {
+    id: 20, par: 19, title: 'THE LONG HELD', delays: [8],
+    hint: 'A double gate, and the shard that unseals the exit is on the far side of it. Everything depends on which turn you choose to stand on the plate and swing.',
+    grid: [
+      '###########',
+      '#@..#..*..#',
+      '#.p.gg....#',
+      '#.S.#....X#',
+      '###########',
+    ],
+  },
+  {
+    id: 21, par: 29, title: 'VAULT RUN', delays: [2, 13],
+    hint: 'The shard is through the door and the exit is back on this side, so you have to pass that one gate twice. The near echo is no use for the return trip — that is what the far one is for.',
+    grid: [
+      '############',
+      '#@..#......#',
+      '#.p.g...*..#',
+      '#.X.#......#',
+      '############',
+    ],
+  },
+  {
+    id: 22, par: 20, title: 'DEEP VAULT', delays: [9],
+    hint: 'Two doors in series and the shard is past both of them. Two blinks means two visits to the plate, spaced exactly as far apart as the doors — and this time you cannot leave until you have been all the way in.',
+    grid: [
+      '#############',
+      '#@..#...#...#',
+      '#.p.g...g.*.#',
+      '#...#...#..X#',
+      '#############',
+    ],
+  },
+  {
+    id: 23, par: 25, title: 'TWIN HOLDS', delays: [3, 10],
+    hint: 'Two double gates, so you need the doors held open twice — and there is only one sentinel, so you only get one swing. That is enough: a single strike is replayed by BOTH echoes, and they are seven turns apart.',
+    grid: [
+      '##############',
+      '#@..#...#....#',
+      '#.p.gg..gg..X#',
+      '#.S.#...#....#',
+      '##############',
     ],
   },
 ];

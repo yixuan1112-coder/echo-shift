@@ -10,7 +10,7 @@ import { writeFile } from 'node:fs/promises';
 import { LEVELS } from '../src/levels.js';
 import { solve } from './solver.mjs';
 
-export const CODE = { up: 'u', down: 'd', left: 'l', right: 'r', wait: 'w' };
+export const CODE = { up: 'u', down: 'd', left: 'l', right: 'r', strike: 's' };
 
 const entries = [];
 for (const def of LEVELS) {
@@ -28,9 +28,10 @@ const file = `/**
  * Optimal solutions, one per level — GENERATED, do not edit by hand.
  * Run \`npm run solutions\` to regenerate; \`npm test\` fails if this drifts.
  *
- * Encoding: u/d/l/r = move, w = wait one turn.
+ * Encoding: u/d/l/r = move, s = strike (kill the adjacent sentinels and
+ * spend the turn standing still).
  */
-export const MOVE_CODES = { u: 'up', d: 'down', l: 'left', r: 'right', w: 'wait' };
+export const MOVE_CODES = { u: 'up', d: 'down', l: 'left', r: 'right', s: 'strike' };
 
 export const SOLUTIONS = {
 ${entries.join('\n')}
@@ -45,15 +46,18 @@ await writeFile(new URL('../src/solutions.js', import.meta.url), file);
 console.log('\nwrote src/solutions.js');
 
 // A human-readable companion, so the repo carries the answers too.
-const ARROW = { up: '↑', down: '↓', left: '←', right: '→', wait: '·' };
+const ARROW = { up: '↑', down: '↓', left: '←', right: '→', strike: '✶' };
 const doc = `# Solutions — SPOILERS
 
 Every line below is the **optimal** solution, produced by \`tools/solver.mjs\`
 (breadth-first search over the same rules engine the game runs) and re-checked
 by \`npm test\`. The in-game **DEMO** button plays exactly these back.
 
-\`·\` means *wait one turn* — usually the most important move on the board,
-because waiting is how you make an echo linger on a plate.
+\`✶\` is a **strike**: it cuts down every sentinel next to you and spends the
+turn standing still. It is the only move that does not change your position, so
+it is also the only way to flip parity and the only way to make an echo pause on
+a plate — which is the only way a gate stays open for two turns instead of
+blinking for one.
 
 ${LEVELS.map((def) => {
   const moves = solve(def).moves;

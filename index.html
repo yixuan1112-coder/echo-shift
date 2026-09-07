@@ -18,6 +18,7 @@
   <header>
     <h1>ECHO SHIFT</h1>
     <p class="rule">Every move you make is replayed <b>N turns later</b> by an echo of yourself. Echoes are solid: they block you, they hold down pressure plates, and if one steps into you, that is a paradox. <b>You must move every turn</b> — there is no waiting, so nobody can hold a plate for two turns running and a gate never stays open. It blinks.</p>
+    <p class="rule">Two things bend that. <b>Shards</b> seal the exit until you have collected every one, so the route is never just "reach the door". And a <b>sentinel</b> beside you can be <b>struck</b> — the one turn in the game you spend without moving. That single pause flips your parity, and later makes your echo stand still: the only way a plate is ever held twice running, and the only way a gate stays open instead of blinking.</p>
   </header>
 
   <main>
@@ -43,13 +44,14 @@
       <div class="panel stats">
         <div class="stat"><span>MOVES</span><b id="turns">0</b></div>
         <div class="stat"><span>PAR</span><b id="par">—</b></div>
+        <div class="stat" id="shard-stat" hidden><span>SHARDS</span><b id="shards">0/0</b></div>
       </div>
 
       <div class="panel">
         <div class="pad">
           <button data-move="up" aria-label="Move up">&#9650;</button>
           <button data-move="left" aria-label="Move left">&#9664;</button>
-          <span class="nowait" aria-hidden="true">NO<br>WAIT</span>
+          <button data-move="strike" class="strike" aria-label="Strike the adjacent sentinels">STRIKE</button>
           <button data-move="right" aria-label="Move right">&#9654;</button>
           <button data-move="down" aria-label="Move down">&#9660;</button>
         </div>
@@ -57,7 +59,7 @@
           <button id="btn-undo">UNDO <kbd>Z</kbd></button>
           <button id="btn-restart">RESET <kbd>R</kbd></button>
         </div>
-        <button id="btn-demo" class="demo">DEMO <kbd>D</kbd></button>
+        <button id="btn-demo" class="demo">DEMO <kbd>P</kbd></button>
       </div>
 
       <div class="panel">
@@ -72,15 +74,18 @@
           <li><i class="sw echo"></i><span><b>ECHO</b> — you, N turns ago. Corner ticks mark where it steps next.</span></li>
           <li><i class="sw plate"></i><span><b>PLATE</b> — gates open while every plate is held down, which is never longer than one turn</span></li>
           <li><i class="sw gate"></i><span><b>GATE</b></span></li>
-          <li><i class="sw exit"></i><span><b>EXIT</b></span></li>
+          <li><i class="sw shard"></i><span><b>SHARD</b> — the exit stays sealed until you carry every one. Echoes walk straight over them; only the present picks things up.</span></li>
+          <li><i class="sw sentinel"></i><span><b>SENTINEL</b> — blocks its tile. <b>STRIKE</b> (space) cuts down every sentinel next to you and spends the turn standing still.</span></li>
+          <li><i class="sw exit"></i><span><b>EXIT</b> — barred while a shard is still out there</span></li>
         </ul>
         <p class="tip">The rule that matters: <b>you cannot wait, so a gate blinks for exactly one turn per visit.</b> Two gates in a row means going back to the plate twice, at exactly the right spacing.</p>
+        <p class="tip">The exception: <b>strike while standing on a plate</b>, and the echo replaying that turn stands on it twice running — the gate stays open for two turns instead of one. One swing clears every sentinel around you, so each tile is worth exactly one pause.</p>
       </div>
     </aside>
   </main>
 
   <footer>
-    <span>ARROWS / WASD MOVE &middot; Z UNDO &middot; R RESET &middot; D DEMO &middot; SWIPE ON MOBILE</span>
+    <span>ARROWS / WASD MOVE &middot; SPACE STRIKE &middot; Z UNDO &middot; R RESET &middot; P DEMO &middot; SWIPE / TAP ON MOBILE</span>
     <a href="https://github.com/yixuan1112-coder/echo-shift" target="_blank" rel="noopener">SOURCE</a>
   </footer>
 </div>

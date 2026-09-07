@@ -2,9 +2,10 @@
  * Optimal solutions, one per level — GENERATED, do not edit by hand.
  * Run `npm run solutions` to regenerate; `npm test` fails if this drifts.
  *
- * Encoding: u/d/l/r = move, w = wait one turn.
+ * Encoding: u/d/l/r = move, s = strike (kill the adjacent sentinels and
+ * spend the turn standing still).
  */
-export const MOVE_CODES = { u: 'up', d: 'down', l: 'left', r: 'right', w: 'wait' };
+export const MOVE_CODES = { u: 'up', d: 'down', l: 'left', r: 'right', s: 'strike' };
 
 export const SOLUTIONS = {
   1: 'rrrrrrddllllll', // STEP, 14 moves
@@ -20,6 +21,16 @@ export const SOLUTIONS = {
   11: 'drududududrrrrrrrrrrr', // DEEPER, 21 moves
   12: 'dddrruuurrduddrrrrrr', // CLOCKWORK, 20 moves
   13: 'drududududrrrrrrrrrrrdrr', // THREE DOORS, 24 moves
+  14: 'ddrdruurru', // RELIC, 10 moves
+  15: 'drudurdrrurrddrr', // HOARD, 16 moves
+  16: 'drudrrsrrrr', // THE GUARD, 11 moves
+  17: 'ddruududrsrru', // OFF BEAT, 13 moves
+  18: 'drsududrrrrrr', // HELD OPEN, 13 moves
+  19: 'drudududrrrsrrrdr', // RELIQUARY, 17 moves
+  20: 'drsudududrrrurrddrr', // THE LONG HELD, 19 moves
+  21: 'druldrrulldrurdrrurrrdllllldl', // VAULT RUN, 29 moves
+  22: 'drududududrrrrrrrrdr', // DEEP VAULT, 20 moves
+  23: 'druduldudrsrrrurdudrrrrrr', // TWIN HOLDS, 25 moves
 };
 
 /** Decode a stored solution into engine move names. */

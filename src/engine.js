@@ -22,6 +22,30 @@
  * only ever land on your tile when d is even, and can only ever swap through
  * you when d is odd — which kind of paradox threatens you is decided the
  * moment a level picks its delays.
+ *
+ * THREE THINGS THAT BEND THOSE RULES
+ * ----------------------------------
+ * SHARD    A relic you pick up by walking over it. The exit stays sealed until
+ *          you hold every shard on the board, so the route is no longer "get
+ *          to the door" but "get to the door having been everywhere else".
+ *          Echoes walk over shards without touching them: only the present
+ *          can pick anything up.
+ *
+ * SENTINEL A hostile that occupies its tile and blocks it until you cut it
+ *          down.
+ *
+ * STRIKE   The attack, and the one crack in rule 2. It is legal only when a
+ *          living sentinel stands next to you, it kills every sentinel
+ *          adjacent to you, and it costs a turn *in which you do not move*.
+ *          So each sentinel is a licensed pause, and a pause does two things
+ *          nothing else in the game can do:
+ *            - it FLIPS PARITY, because you spent a turn without changing
+ *              (x + y) mod 2;
+ *            - it makes your echo stand still later, which is the only way a
+ *              plate is ever held for two turns running — the only way a gate
+ *              stays open instead of blinking.
+ *          Echoes replay your *movement*, not your actions: an echo repeating
+ *          a struck turn simply stands there. It does not swing at anything.
  */
 
 export const WALL = '#';
@@ -30,6 +54,8 @@ export const EXIT = 'X';
 export const PLATE = 'p';
 export const GATE = 'g';
 export const SPAWN = '@';
+export const SHARD = '*';
+export const SENTINEL = 'S';
 
 export const MOVES = {
   up:    { dx: 0, dy: -1 },
@@ -40,6 +66,14 @@ export const MOVES = {
 
 export const DIRECTIONS = Object.keys(MOVES);
 
+/** The attack. Not a direction: it is the one turn you can spend standing still. */
+export const STRIKE = 'strike';
+
+/** Everything the player (and the solver) may do on a turn. */
+export const ACTIONS = [...DIRECTIONS, STRIKE];
+
+const key = (x, y) => x + ',' + y;
+
 /** Parse a level definition into an immutable board + an initial state. */
 export function loadLevel(def) {
   const rows = def.grid;
@@ -49,14 +83,24 @@ export function loadLevel(def) {
   let spawn = null;
   const plates = [];
   const gates = [];
+  const shards = [];
+  const sentinels = [];
   let exit = null;
 
   for (let y = 0; y < h; y++) {
     const row = [];
     for (let x = 0; x < w; x++) {
       const ch = rows[y][x] ?? WALL;
+      // Shards and sentinels are *occupants* of a floor tile, not tile types:
+      // both come and go during play, so they live in the state, not the board.
       if (ch === SPAWN) {
         spawn = { x, y };
+        row.push(FLOOR);
+      } else if (ch === SHARD) {
+        shards.push({ x, y });
+        row.push(FLOOR);
+      } else if (ch === SENTINEL) {
+        sentinels.push({ x, y });
         row.push(FLOOR);
       } else {
         if (ch === PLATE) plates.push({ x, y });
@@ -69,6 +113,8 @@ export function loadLevel(def) {
   }
   if (!spawn) throw new Error(`level ${def.id}: no spawn (@)`);
   if (!exit) throw new Error(`level ${def.id}: no exit (X)`);
+  if (shards.length > 16) throw new Error(`level ${def.id}: at most 16 shards`);
+  if (sentinels.length > 16) throw new Error(`level ${def.id}: at most 16 sentinels`);
 
   const delays = [...def.delays].sort((a, b) => a - b);
   if (delays.some((d) => d < 1)) throw new Error(`level ${def.id}: delay must be >= 1`);
@@ -77,8 +123,13 @@ export function loadLevel(def) {
     id: def.id,
     title: def.title,
     hint: def.hint ?? '',
-    w, h, cells, spawn, exit, plates, gates, delays,
+    w, h, cells, spawn, exit, plates, gates, shards, sentinels, delays,
     maxDelay: delays.length ? delays[delays.length - 1] : 0,
+    // Bit per shard; the exit unseals when `taken` reaches this.
+    allShards: (1 << shards.length) - 1,
+    // Position lookups, so the hot path never scans a list.
+    shardAt: new Map(shards.map((p, i) => [key(p.x, p.y), i])),
+    sentinelAt: new Map(sentinels.map((p, i) => [key(p.x, p.y), i])),
   };
   return { board, state: initialState(board) };
 }
@@ -90,8 +141,39 @@ export function initialState(board) {
     // Only the last `maxDelay + 1` positions can still matter to an echo, so
     // the trail is bounded. trail[trail.length - 1] is always where you are now.
     trail: [{ ...board.spawn }],
+    taken: 0,   // bitmask of shards picked up
+    slain: 0,   // bitmask of sentinels cut down
+    struck: false, // did the turn just played end in a strike? (for the renderer)
     status: 'playing', // 'playing' | 'won' | 'paradox' | 'stuck'
   };
+}
+
+/** Index of the shard still lying on (x, y), or -1. */
+export function shardAt(board, state, x, y) {
+  const i = board.shardAt.get(key(x, y));
+  return i === undefined || (state.taken >> i) & 1 ? -1 : i;
+}
+
+/** Index of the sentinel still standing on (x, y), or -1. */
+export function sentinelAt(board, state, x, y) {
+  const i = board.sentinelAt.get(key(x, y));
+  return i === undefined || (state.slain >> i) & 1 ? -1 : i;
+}
+
+/** Shards still on the board. */
+export function shardsLeft(board, state) {
+  return board.shards.length - popcount(state.taken);
+}
+
+/** The exit only accepts you once you are carrying every shard. */
+export function exitOpen(board, state) {
+  return state.taken === board.allShards;
+}
+
+function popcount(n) {
+  let c = 0;
+  while (n) { n &= n - 1; c++; }
+  return c;
 }
 
 /** Position `d` turns ago, or null if time has not run that far yet. */
@@ -140,22 +222,62 @@ export function canMove(board, state, dir) {
   const t = tileAt(board, nx, ny);
   if (t === WALL) return false;
   if (t === GATE && !gatesOpen(board, state)) return false;
+  if (t === EXIT && !exitOpen(board, state)) return false;   // sealed: shards first
+  if (sentinelAt(board, state, nx, ny) >= 0) return false;    // something is in the way
   return true;
+}
+
+/**
+ * The attack is legal only with a living sentinel beside you. That restriction
+ * is the whole balance of it: without a sentinel there is still no way to spend
+ * a turn in place, so every level's supply of parity flips is exactly the
+ * number of sentinels the designer put on the board.
+ */
+export function canStrike(board, state) {
+  if (state.status !== 'playing') return false;
+  return DIRECTIONS.some((d) => {
+    const m = MOVES[d];
+    return sentinelAt(board, state, state.pos.x + m.dx, state.pos.y + m.dy) >= 0;
+  });
+}
+
+/** Can the player take this action (a direction, or STRIKE) right now? */
+export function canAct(board, state, action) {
+  return action === STRIKE ? canStrike(board, state) : canMove(board, state, action);
 }
 
 /**
  * Advance one turn. Returns a NEW state (never mutates), or null if the move
  * was illegal — an illegal move costs no time, which keeps the puzzle fair.
  */
-export function step(board, state, dir) {
-  if (!canMove(board, state, dir)) return null;
-  const m = MOVES[dir];
-  const pos = { x: state.pos.x + m.dx, y: state.pos.y + m.dy };
+export function step(board, state, action) {
+  if (!canAct(board, state, action)) return null;
+
+  const striking = action === STRIKE;
+  // A strike is a turn spent in place. The trail still gets an entry, so the
+  // echo replaying it stands still too — that pause is the point of the move.
+  const pos = striking
+    ? { ...state.pos }
+    : { x: state.pos.x + MOVES[action].dx, y: state.pos.y + MOVES[action].dy };
+
+  let taken = state.taken;
+  let slain = state.slain;
+  if (striking) {
+    for (const d of DIRECTIONS) {
+      const m = MOVES[d];
+      const i = sentinelAt(board, state, pos.x + m.dx, pos.y + m.dy);
+      if (i >= 0) slain |= 1 << i;          // one swing clears every neighbour
+    }
+  } else {
+    const si = shardAt(board, state, pos.x, pos.y);
+    if (si >= 0) taken |= 1 << si;          // only the present can pick things up
+  }
+
   const cap = board.maxDelay + 1;
   const trail = state.trail.length >= cap
     ? [...state.trail.slice(state.trail.length - cap + 1), pos]
     : [...state.trail, pos];
-  const next = { turn: state.turn + 1, pos, trail, status: 'playing' };
+  const next = { turn: state.turn + 1, pos, trail, taken, slain, struck: striking, status: 'playing' };
 
   // Paradox: an echo walks into you, or you and an echo swap places.
   const echoesNow = echoPositions(board, state);
@@ -169,8 +291,8 @@ export function step(board, state, dir) {
 
   if (same(pos, board.exit)) { next.status = 'won'; return next; }
 
-  // No waiting means having no legal move is itself a way to lose.
-  if (!DIRECTIONS.some((d) => canMove(board, next, d))) next.status = 'stuck';
+  // No waiting means having no legal action left is itself a way to lose.
+  if (!ACTIONS.some((a) => canAct(board, next, a))) next.status = 'stuck';
   return next;
 }
 
@@ -180,7 +302,9 @@ export function step(board, state, dir) {
  */
 export function stateKey(board, state) {
   const phase = Math.min(state.turn, board.maxDelay);
-  let k = String.fromCharCode(phase);
+  // Two extra characters carry what has been collected and what has been
+  // killed — both are permanent, so they belong in the identity of a state.
+  let k = String.fromCharCode(phase, state.taken, state.slain);
   for (const p of state.trail) k += String.fromCharCode(p.y * board.w + p.x);
   return k;
 }

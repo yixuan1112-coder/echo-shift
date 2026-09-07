@@ -7,12 +7,14 @@
  *   2. the optimal solution replays cleanly through the real engine,
  *   3. it is NOT solvable with the echoes disabled — i.e. the mechanic is
  *      load-bearing, not decoration,
+ *   3b. and, on any level carrying a sentinel, NOT solvable with the strike
+ *      disabled either, so the attack is never just a locked door,
  *   4. the stored solution the in-game DEMO plays back is still optimal and
  *      still wins — run `npm run solutions` if this drifts.
  */
 import { LEVELS } from '../src/levels.js';
 import { SOLUTIONS, decodeSolution } from '../src/solutions.js';
-import { solve, solveWithoutEchoes, replay } from './solver.mjs';
+import { solve, solveWithoutEchoes, solveWithoutStrike, replay } from './solver.mjs';
 
 let failures = 0;
 const rows = [];
@@ -64,20 +66,33 @@ for (const def of LEVELS) {
     failures++;
   }
 
+  // Same test for the attack: a sentinel that can simply be walked around is
+  // scenery, and a level that never needs the pause does not need the sentinel.
+  const hasSentinel = def.grid.some((row) => row.includes('S'));
+  let needsStrike = '-';
+  if (hasSentinel) {
+    needsStrike = solveWithoutStrike(def).solved ? 'NO' : 'yes';
+    if (needsStrike === 'NO') {
+      console.error(`✗ L${def.id} "${def.title}" — solvable WITHOUT striking; the sentinel is decoration`);
+      failures++;
+    }
+  }
+
   rows.push({
     id: def.id,
     title: def.title,
     delays: def.delays.join('/'),
     optimal: res.moves.length,
     needsEcho: def.id === 1 ? 'tutorial' : (needsEcho ? 'yes' : 'NO'),
+    needsStrike,
     demo: stored.length === res.moves.length ? 'ok' : 'STALE',
     states: res.explored,
     ms,
   });
 }
 
-console.log('\n  #  level                    delay  optimal  echo-required   demo   states   time');
-console.log('  ' + '-'.repeat(81));
+console.log('\n  #  level                    delay  optimal  echo-required  strike  demo   states   time');
+console.log('  ' + '-'.repeat(89));
 for (const r of rows) {
   if (r.status === 'UNSOLVABLE') {
     console.log(`  ${String(r.id).padEnd(3)}${r.title.padEnd(25)}  UNSOLVABLE`);
@@ -85,7 +100,7 @@ for (const r of rows) {
   }
   console.log(
     `  ${String(r.id).padEnd(3)}${r.title.padEnd(25)}${String(r.delays).padEnd(7)}` +
-    `${String(r.optimal).padEnd(9)}${String(r.needsEcho).padEnd(16)}${String(r.demo).padEnd(7)}${String(r.states).padEnd(9)}${r.ms}ms`
+    `${String(r.optimal).padEnd(9)}${String(r.needsEcho).padEnd(15)}${String(r.needsStrike).padEnd(8)}${String(r.demo).padEnd(7)}${String(r.states).padEnd(9)}${r.ms}ms`
   );
 }
 console.log('');
@@ -94,4 +109,4 @@ if (failures) {
   console.error(`${failures} level(s) failed verification.`);
   process.exit(1);
 }
-console.log(`All ${LEVELS.length} levels verified: solvable, echo-dependent, and the DEMO solutions are optimal.\n`);
+console.log(`All ${LEVELS.length} levels verified: solvable, echo-dependent, strike-dependent where a sentinel stands, and the DEMO solutions are optimal.\n`);

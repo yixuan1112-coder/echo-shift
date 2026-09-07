@@ -58,16 +58,19 @@ kbd{font:400 9px/1 var(--pixel);color:var(--dim);border:2px solid var(--line);pa
 .panel{background:var(--panel);border:2px solid var(--line);padding:13px;margin-bottom:14px}
 .panel h3{margin:0 0 11px;font:400 10px/1 var(--pixel);letter-spacing:.12em;color:var(--dim);text-transform:uppercase}
 .stat{display:flex;justify-content:space-between;align-items:center;padding:4px 0;color:var(--dim);font-size:11px;letter-spacing:.1em}
+/* `display:flex` above outranks the browser's [hidden] rule, so say it again. */
+.stat[hidden]{display:none}
 .stat b{color:var(--ink);font:400 18px/1 var(--pixel)}
 
 .pad{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .pad button{padding:12px 0;font-size:10px}
 .pad button[data-move="up"]{grid-area:1/2}
 .pad button[data-move="left"]{grid-area:2/1}
-.nowait{grid-area:2/2;display:grid;place-items:center;text-align:center;
-  font:400 8px/1.35 var(--pixel);letter-spacing:.08em;color:#39445c;border:2px dashed #232c3c}
 .pad button[data-move="right"]{grid-area:2/3}
 .pad button[data-move="down"]{grid-area:3/2}
+.pad button.strike{grid-area:2/2;font-size:8.5px;letter-spacing:.06em;
+  color:#fff0a8;border-color:#5a4a1c;background:#1d1a10}
+.pad button.strike:disabled{color:#3f4757;border-color:#232a36;background:transparent;cursor:default}
 .actions{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
 .actions button{padding:9px 4px;font-size:9px}
 .demo{width:100%;margin-top:6px;padding:10px 4px;font-size:9px;
@@ -90,6 +93,9 @@ kbd{font:400 9px/1 var(--pixel);color:var(--dim);border:2px solid var(--line);pa
 .sw.plate{background:none;border:2px solid #4a5468}
 .sw.gate{background:var(--gate);box-shadow:inset 3px 0 0 var(--bg), inset -3px 0 0 var(--bg)}
 .sw.exit{background:none;border:2px solid var(--exit)}
+.sw.shard{background:none;
+  background-image:linear-gradient(45deg,transparent 30%,#7ef0d5 30%,#7ef0d5 70%,transparent 70%)}
+.sw.sentinel{background:#9d6bff;box-shadow:inset 0 -3px 0 #5b3a99}
 .tip{margin:13px 0 0;padding-top:12px;border-top:2px solid var(--line);color:var(--dim);font-size:11.5px}
 .tip b{color:var(--ink);font-weight:400}
 

@@ -4,8 +4,11 @@ Every line below is the **optimal** solution, produced by `tools/solver.mjs`
 (breadth-first search over the same rules engine the game runs) and re-checked
 by `npm test`. The in-game **DEMO** button plays exactly these back.
 
-`·` means *wait one turn* — usually the most important move on the board,
-because waiting is how you make an echo linger on a plate.
+`✶` is a **strike**: it cuts down every sentinel next to you and spends the
+turn standing still. It is the only move that does not change your position, so
+it is also the only way to flip parity and the only way to make an echo pause on
+a plate — which is the only way a gate stays open for two turns instead of
+blinking for one.
 
 ## 1. STEP  — 14 moves, echo -3
 
@@ -199,6 +202,147 @@ because waiting is how you make an echo linger on a plate.
 ```
 
 ↓ → ↑ ↓ ↑ ↓ ↑ ↓ ↑ ↓ → → → → → → → → → → → ↓ → →
+
+## 14. RELIC  — 10 moves, echo -4
+
+> The door is barred. A shard is lying in the near room and the exit will not open until you are carrying it — so the question is no longer how to reach the door, it is what the trip to the shard does to your timing.
+
+```
+##########
+#@..#X...#
+#...g....#
+#.p.#....#
+#..*#....#
+##########
+```
+
+↓ ↓ → ↓ → ↑ ↑ → → ↑
+
+## 15. HOARD  — 16 moves, echo -5
+
+> Two shards, one on each side of the gate. You get exactly one blink through that door, so decide which shard you are collecting on which side of it before you take a step.
+
+```
+###########
+#@.*#..*..#
+#.p.g.....#
+#...#....X#
+###########
+```
+
+↓ → ↑ ↓ ↑ → ↓ → → ↑ → → ↓ ↓ → →
+
+## 16. THE GUARD  — 11 moves, echo -3
+
+> Something is standing in the only tile past the gate. Press space to strike it down — but a strike costs a turn in which you do not move, and you will be standing in the doorway when you spend it.
+
+```
+##########
+#@..#....#
+#.p.gS..X#
+#...#....#
+##########
+```
+
+↓ → ↑ ↓ → → ✶ → → → →
+
+## 17. OFF BEAT  — 13 moves, echo -7
+
+> Nothing is in your way here. The plate and the door are simply an odd number of steps apart, and every move you make flips your parity — so the only turn that can fix it is the one turn that does not move you at all.
+
+```
+##########
+#@..#X...#
+#...g....#
+#.pS#....#
+##########
+```
+
+↓ ↓ → ↑ ↑ ↓ ↑ ↓ → ✶ → → ↑
+
+## 18. HELD OPEN  — 13 moves, echo -6
+
+> Two gate tiles back to back: you need the door open on two consecutive turns, which no blink has ever given you. Strike while you are standing on the plate, and the echo replaying that turn will stand on it twice.
+
+```
+##########
+#@..#....#
+#.p.gg..X#
+#.S.#....#
+##########
+```
+
+↓ → ✶ ↑ ↓ ↑ ↓ → → → → → →
+
+## 19. RELIQUARY  — 17 moves, echo -7
+
+> The shard is behind the gate and something is standing between you and it. You have one blink to get in, and the turn you spend swinging is a turn your echo will spend standing still.
+
+```
+###########
+#@..#..#..#
+#.p.g.S*..#
+#...#..#.X#
+###########
+```
+
+↓ → ↑ ↓ ↑ ↓ ↑ ↓ → → → ✶ → → → ↓ →
+
+## 20. THE LONG HELD  — 19 moves, echo -8
+
+> A double gate, and the shard that unseals the exit is on the far side of it. Everything depends on which turn you choose to stand on the plate and swing.
+
+```
+###########
+#@..#..*..#
+#.p.gg....#
+#.S.#....X#
+###########
+```
+
+↓ → ✶ ↑ ↓ ↑ ↓ ↑ ↓ → → → ↑ → → ↓ ↓ → →
+
+## 21. VAULT RUN  — 29 moves, echo -2 / -13
+
+> The shard is through the door and the exit is back on this side, so you have to pass that one gate twice. The near echo is no use for the return trip — that is what the far one is for.
+
+```
+############
+#@..#......#
+#.p.g...*..#
+#.X.#......#
+############
+```
+
+↓ → ↑ ← ↓ → → ↑ ← ← ↓ → ↑ → ↓ → → ↑ → → → ↓ ← ← ← ← ← ↓ ←
+
+## 22. DEEP VAULT  — 20 moves, echo -9
+
+> Two doors in series and the shard is past both of them. Two blinks means two visits to the plate, spaced exactly as far apart as the doors — and this time you cannot leave until you have been all the way in.
+
+```
+#############
+#@..#...#...#
+#.p.g...g.*.#
+#...#...#..X#
+#############
+```
+
+↓ → ↑ ↓ ↑ ↓ ↑ ↓ ↑ ↓ → → → → → → → → ↓ →
+
+## 23. TWIN HOLDS  — 25 moves, echo -3 / -10
+
+> Two double gates, so you need the doors held open twice — and there is only one sentinel, so you only get one swing. That is enough: a single strike is replayed by BOTH echoes, and they are seven turns apart.
+
+```
+##############
+#@..#...#....#
+#.p.gg..gg..X#
+#.S.#...#....#
+##############
+```
+
+↓ → ↑ ↓ ↑ ← ↓ ↑ ↓ → ✶ → → → ↑ → ↓ ↑ ↓ → → → → → →
 
 ---
 

@@ -7,11 +7,13 @@
  * keeps the space small. Nodes hold a parent pointer rather than a copied
  * path, so the frontier stays flat in memory.
  */
-import { loadLevel, step, stateKey, DIRECTIONS } from '../src/engine.js';
+import { loadLevel, step, stateKey, ACTIONS, DIRECTIONS } from '../src/engine.js';
 
-const DIRS = DIRECTIONS;
+// Directions plus STRIKE: the attack is a turn like any other, so the search
+// has to be allowed to spend one.
+const DIRS = ACTIONS;
 
-export function solve(def, { maxNodes = 3_000_000 } = {}) {
+export function solve(def, { maxNodes = 3_000_000, actions = DIRS } = {}) {
   const { board, state } = loadLevel(def);
 
   const nodes = [{ state, parent: -1, move: null }];
@@ -28,9 +30,9 @@ export function solve(def, { maxNodes = 3_000_000 } = {}) {
     const idx = head++;
     const cur = nodes[idx].state;
 
-    for (const dir of DIRS) {
+    for (const dir of actions) {
       const next = step(board, cur, dir);
-      if (!next) continue;                     // illegal move; no time passes
+      if (!next) continue;                     // illegal action; no time passes
       if (next.status === 'paradox' || next.status === 'stuck') continue; // dead branch
       if (next.status === 'won') {
         return { solved: true, moves: [...pathTo(idx), dir], explored: nodes.length, board };
@@ -54,6 +56,15 @@ export function solve(def, { maxNodes = 3_000_000 } = {}) {
  */
 export function solveWithoutEchoes(def, opts) {
   return solve({ ...def, delays: [] }, opts);
+}
+
+/**
+ * Same level with the attack taken away, to prove a sentinel is load-bearing
+ * rather than scenery: if a level is still solvable without ever striking, the
+ * pause it grants was not actually needed.
+ */
+export function solveWithoutStrike(def, opts) {
+  return solve(def, { ...opts, actions: DIRECTIONS });
 }
 
 /** Replay a move list through the engine and report what really happened. */
